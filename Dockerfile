@@ -1,41 +1,38 @@
-# Étape de base
+# Étape 1 : L'image de base pour l'exécution (plus petite)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
+# On utilise l'utilisateur 'app' non-root créé par l'image de base de Microsoft, c'est plus sécurisé.
+USER app
 WORKDIR /app
 EXPOSE 8080
 
-# Étape de build
+# Étape 2 : L'image de build (plus grosse, avec tous les outils)
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copier le fichier projet et restaurer les dépendances
+# --- OPTIMISATION DU CACHE ---
+# On copie d'abord uniquement le .csproj pour restaurer les dépendances.
+# Cette étape ne changera que si tu ajoutes un paquet NuGet.
 COPY ["YooVisitApi/YooVisitApi/YooVisitApi.csproj", "YooVisitApi/"]
 RUN dotnet restore "./YooVisitApi/YooVisitApi.csproj"
 
-# Copier le reste des fichiers
+# Maintenant, on copie le reste du code source.
 COPY . .
-
-# Créer le répertoire de build et définir les permissions
-RUN mkdir -p /app/build && chown -R $APP_UID /app/build
-
-# Construire le projet
 WORKDIR "/src/YooVisitApi/YooVisitApi"
-RUN dotnet build "./YooVisitApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "YooVisitApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Étape de publication
+# Étape 3 : La publication
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./YooVisitApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "YooVisitApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Étape finale
+# Étape 4 : L'image finale, légère et prête pour la production
 FROM base AS final
 WORKDIR /app
-
-# Copier les fichiers publiés
 COPY --from=publish /app/publish .
 
-# Créer le répertoire de stockage et définir les permissions
-RUN mkdir -p /app/storage/avatars && chown -R $APP_UID /app/storage
+# On crée les dossiers de stockage et on donne les permissions
+RUN mkdir -p /app/storage/avatars
+RUN chown -R app /app/storage
 
 ENTRYPOINT ["dotnet", "YooVisitApi.dll"]

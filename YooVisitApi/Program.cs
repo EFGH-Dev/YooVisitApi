@@ -1,28 +1,20 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using YooVisitApi.Data;
 using YooVisitApi.Interfaces;
 using YooVisitApi.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Configuration des services ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApiDbContext>(options =>
-    options.UseNpgsql(connectionString)); // Nécessite le package Npgsql.EntityFrameworkCore.PostgreSQL
-
-// On enregistre nos services personnalisés
-// Recette pour le service utilisateur
+    options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IUserService, UserService>();
-// Recette pour le service de token
 builder.Services.AddScoped<ITokenService, TokenService>();
-
-// On ajoute le HttpClientFactory, même si on ne l'utilise plus pour la communication interne,
-// il est toujours utile pour parler à des services externes plus tard.
 builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>
@@ -73,6 +65,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Une erreur est survenue pendant la migration ou le seeding de la BDD.");
     }
 }
+// ----------------------------------------------------
 
 if (app.Environment.IsDevelopment())
 {
@@ -80,7 +73,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// On configure l'API pour servir les fichiers statiques (photos, avatars)
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(

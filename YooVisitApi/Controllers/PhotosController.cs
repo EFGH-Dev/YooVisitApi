@@ -33,16 +33,9 @@ public class PhotosController : ControllerBase
                                        {
                                            Id = photo.Id,
                                            // On prend les données de la pastille
-                                           Title = pastille.Title,
-                                           Description = pastille.Description,
-                                           Latitude = pastille.Latitude,
-                                           Longitude = pastille.Longitude,
-                                           // On prend les données de l'utilisateur
-                                           UserName = user.Nom,
                                            // On prend les données de la photo elle-même
                                            ImageUrl = $"{Request.Scheme}://{Request.Host}/storage/{photo.FileName}",
                                            UploadedAt = photo.UploadedAt,
-                                           IsOwner = pastille.CreatedByUserId == currentUserId
                                        }).ToListAsync();
 
         return Ok(photosWithDetails);
@@ -65,14 +58,8 @@ public class PhotosController : ControllerBase
                               select new PhotoDto
                               {
                                   Id = photo.Id,
-                                  Title = pastille.Title,
-                                  Description = pastille.Description,
-                                  Latitude = pastille.Latitude,
-                                  Longitude = pastille.Longitude,
-                                  UserName = userName,
                                   ImageUrl = $"{Request.Scheme}://{Request.Host}/storage/{photo.FileName}",
                                   UploadedAt = photo.UploadedAt,
-                                  IsOwner = true
                               }).ToListAsync();
 
         return Ok(myPhotos);

@@ -107,11 +107,12 @@ public class PastillesController : ControllerBase
                 Description = p.Description,
                 Latitude = p.Latitude,
                 Longitude = p.Longitude,
-                CreatedByUserId = p.CreatedByUserId,
-                CreatedByUserName = p.User.Nom,
+                // Remplacer cette ligne dans le Select :
+                CreatedByUserName = p.User != null
+                    ? (p.User.Nom ?? (p.User.Email != null ? p.User.Email.Substring(0, p.User.Email.IndexOf('@')) : "Inconnu"))
+                    : "Inconnu",
                 AverageRating = p.Ratings.Any() ? p.Ratings.Average(r => r.RatingValue) : 0,
                 IsOwner = p.CreatedByUserId == currentUserId,
-
                 Photos = p.Photos.Select(photo => new PhotoDto
                 {
                     Id = photo.Id,
@@ -123,6 +124,25 @@ public class PastillesController : ControllerBase
 
         return Ok(dtos);
     }
+
+    [HttpGet("my-pastilles")]
+    public async Task<ActionResult<IEnumerable<PastilleDto>>> GetMyPastilles()
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var pastillesFromDb = await _context.Pastilles
+            .Where(p => p.CreatedByUserId == userId)
+            .Include(p => p.User)
+            .Include(p => p.Photos)
+            .Include(p => p.Ratings)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var dtos = pastillesFromDb.Select(p => MapToDto(p, userId)).ToList();
+
+        return Ok(dtos);
+    }
+
 
     [Authorize]
     [HttpPut("{id}")]
@@ -209,7 +229,8 @@ public class PastillesController : ControllerBase
 
         return Ok(new { Message = "Merci pour votre vote !"});
     }
-    private PastilleDto MapToDto(Pastille pastille)
+
+    private PastilleDto MapToDto(Pastille pastille, Guid? currentUserId = null)
     {
         return new PastilleDto
         {
