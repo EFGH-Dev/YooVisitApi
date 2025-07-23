@@ -1,14 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.FileProviders;
 using System.Text;
-using YooVisitAPI.Data;
-using YooVisitAPI.Interfaces;
-using YooVisitAPI.Services;
-using YooVisitUserAPI.Data;
-using Microsoft.OpenApi.Models;
+using YooVisitApi.Data;
+using YooVisitApi.Interfaces;
+using YooVisitApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -86,13 +81,6 @@ if (app.Environment.IsDevelopment())
 }
 
 // On configure l'API pour servir les fichiers statiques (photos, avatars)
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "storage")),
-    RequestPath = "/storage"
-});
-
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(

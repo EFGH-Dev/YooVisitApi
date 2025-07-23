@@ -1,7 +1,7 @@
-﻿using YooVisitAPI.Dtos;
-using YooVisitAPI.Models;
+﻿using YooVisitApi.Dtos;
+using YooVisitApi.Models;
 
-namespace YooVisitAPI.Services;
+namespace YooVisitApi.Services;
 
 public interface IUserService
 {

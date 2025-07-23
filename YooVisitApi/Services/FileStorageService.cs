@@ -1,11 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using YooVisitAPI.Interfaces;
+﻿using YooVisitApi.Interfaces;
 
-namespace YooVisitAPI.Services
+namespace YooVisitApi.Services
 {
 
     public class FileStorageService : IFileStorageService

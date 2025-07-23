@@ -1,4 +1,4 @@
-﻿namespace YooVisitAPI.Dtos
+﻿namespace YooVisitApi.Dtos
 {
     public class PastilleDto
     {
@@ -15,5 +15,6 @@
         public string? CreatedByUserName { get; set; } // Le nom du créateur
         public double AverageRating { get; set; }
         public List<PhotoDto> Photos { get; set; } = new();
+        public bool IsOwner { get; set; }
     }
 }

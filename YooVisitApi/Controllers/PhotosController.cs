@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using YooVisitAPI.Data;
-using YooVisitAPI.Dtos;
+using YooVisitApi.Data;
+using YooVisitApi.Dtos;
 
-namespace YooVisitAPI.Controllers;
+namespace YooVisitApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

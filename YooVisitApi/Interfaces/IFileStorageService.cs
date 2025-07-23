@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
-
-namespace YooVisitAPI.Interfaces
+﻿namespace YooVisitApi.Interfaces
 {
     public interface IFileStorageService
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using YooVisitAPI.Models; // Assure-toi que ce namespace est correct
+using YooVisitApi.Models; // Assure-toi que ce namespace est correct
 
-namespace YooVisitAPI.Data;
+namespace YooVisitApi.Data;
 
 public class ApiDbContext : DbContext
 {

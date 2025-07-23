@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using YooVisitAPI.Data;
-using YooVisitAPI.Models;
+using YooVisitApi.Models;
 
-namespace YooVisitUserAPI.Data;
+namespace YooVisitApi.Data;
 
 public static class DataSeeder
 {

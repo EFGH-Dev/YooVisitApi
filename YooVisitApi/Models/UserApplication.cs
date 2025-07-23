@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations; // <-- AJOUTER CE USING !
 
-namespace YooVisitAPI.Models;
+namespace YooVisitApi.Models;
 
 public class UserApplication
 {
@@ -24,4 +24,5 @@ public class UserApplication
 
     [StringLength(200)]
     public string? ProfilePictureFileName { get; set; }
+    public virtual ICollection<Pastille> Pastilles { get; set; } = new List<Pastille>();
 }

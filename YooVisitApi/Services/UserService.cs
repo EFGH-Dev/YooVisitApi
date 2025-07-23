@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using YooVisitAPI.Data;
-using YooVisitAPI.Dtos;
-using YooVisitAPI.Models;// Assure-toi que le namespace de IUserService est bien importé
+using YooVisitApi.Data;
+using YooVisitApi.Dtos;
+using YooVisitApi.Models;// Assure-toi que le namespace de IUserService est bien importé
 
-namespace YooVisitAPI.Services;
+namespace YooVisitApi.Services;
 
 // On déclare que cette classe implémente l'interface IUserService.
 public class UserService : IUserService

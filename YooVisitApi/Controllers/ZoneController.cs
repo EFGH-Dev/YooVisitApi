@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
-using YooVisitAPI.Data;
-using YooVisitAPI.Dtos;
-using YooVisitAPI.Models;
+using YooVisitApi.Data;
+using YooVisitApi.Dtos;
+using YooVisitApi.Models;
 
-namespace YooVisitAPI.Controllers;
+namespace YooVisitApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -1,4 +1,4 @@
-﻿namespace YooVisitAPI.Dtos
+﻿namespace YooVisitApi.Dtos
 {
     public class PlayerStatsDto
     {

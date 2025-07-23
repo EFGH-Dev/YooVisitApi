@@ -1,14 +1,13 @@
-﻿using BCrypt.Net;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using YooVisitAPI.Data;
-using YooVisitAPI.Dtos;
-using YooVisitAPI.Interfaces;
-using YooVisitAPI.Models;
+using YooVisitApi.Data;
+using YooVisitApi.Dtos;
+using YooVisitApi.Interfaces;
+using YooVisitApi.Models;
 
-namespace YooVisit.API.Controllers;
+namespace YooVisitApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

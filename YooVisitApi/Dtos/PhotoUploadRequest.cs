@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-
-namespace YooVisitAPI.Dtos;
+﻿namespace YooVisitApi.Dtos;
 
 public class PhotoUploadRequest
 {

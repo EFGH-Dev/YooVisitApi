@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace YooVisitAPI.Models
+namespace YooVisitApi.Models
 {
     public class Pastille
     {

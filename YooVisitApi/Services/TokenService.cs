@@ -2,10 +2,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using YooVisitAPI.Interfaces; // Pour l'interface
-using YooVisitAPI.Models;   // Pour UserApplication
+using YooVisitApi.Interfaces; // Pour l'interface
+using YooVisitApi.Models;   // Pour UserApplication
 
-namespace YooVisitAPI.Services; // <-- LA CORRECTION EST ICI
+namespace YooVisitApi.Services; // <-- LA CORRECTION EST ICI
 
 public class TokenService : ITokenService
 {

@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace YooVisitAPI.Dtos;
+namespace YooVisitApi.Dtos;
 
 // Représente un point GPS simple
 public class LatLngDto

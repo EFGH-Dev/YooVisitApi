@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace YooVisitAPI.Dtos
+namespace YooVisitApi.Dtos
 {
     public class PastilleRatingDto
     {

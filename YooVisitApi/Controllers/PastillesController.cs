@@ -2,11 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using YooVisitAPI.Data;
-using YooVisitAPI.Dtos;
-using YooVisitAPI.Models;
+using YooVisitApi.Data;
+using YooVisitApi.Dtos;
+using YooVisitApi.Models;
 
-namespace YooVisitAPI.Controllers;
+namespace YooVisitApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -107,9 +107,11 @@ public class PastillesController : ControllerBase
                 Description = p.Description,
                 Latitude = p.Latitude,
                 Longitude = p.Longitude,
-                CreatedByUserName = p.User != null ? p.User.Nom ?? p.User.Email.Split('@').First() : "Inconnu",
+                CreatedByUserId = p.CreatedByUserId,
+                CreatedByUserName = p.User.Nom,
                 AverageRating = p.Ratings.Any() ? p.Ratings.Average(r => r.RatingValue) : 0,
                 IsOwner = p.CreatedByUserId == currentUserId,
+
                 Photos = p.Photos.Select(photo => new PhotoDto
                 {
                     Id = photo.Id,

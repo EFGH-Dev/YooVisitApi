@@ -1,6 +1,6 @@
-﻿using YooVisitAPI.Models;
+﻿using YooVisitApi.Models;
 
-namespace YooVisitAPI.Interfaces;
+namespace YooVisitApi.Interfaces;
 
 public interface ITokenService
 {
