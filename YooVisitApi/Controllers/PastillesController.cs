@@ -161,9 +161,13 @@ public class PastillesController : ControllerBase
 
         pastille.Title = updateDto.Title;
         pastille.Description = updateDto.Description;
+        pastille.Latitude = updateDto.Latitude;
+        pastille.Longitude = updateDto.Longitude;
+        pastille.StyleArchitectural = updateDto.StyleArchitectural;
+        pastille.PeriodeConstruction = updateDto.PeriodeConstruction;
+        pastille.HorairesOuverture = updateDto.HorairesOuverture;
         await _context.SaveChangesAsync();
-
-        return NoContent(); // Succès
+        return NoContent();
     }
 
     [Authorize]

@@ -12,7 +12,7 @@ using YooVisitApi.Data;
 namespace YooVisitApi.Migrations
 {
     [DbContext(typeof(ApiDbContext))]
-    [Migration("20250723132536_InitialCreate")]
+    [Migration("20250724083211_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
