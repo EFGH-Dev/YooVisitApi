@@ -12,7 +12,7 @@ using YooVisitApi.Data;
 namespace YooVisitApi.Migrations
 {
     [DbContext(typeof(ApiDbContext))]
-    [Migration("20250724083211_InitialCreate")]
+    [Migration("20250728110310_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -119,6 +119,56 @@ namespace YooVisitApi.Migrations
                     b.ToTable("Photos");
                 });
 
+            modelBuilder.Entity("YooVisitApi.Models.Quiz", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PastilleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PastilleId");
+
+                    b.ToTable("Quizzes");
+                });
+
+            modelBuilder.Entity("YooVisitApi.Models.QuizAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AnswerText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId");
+
+                    b.ToTable("QuizAnswers");
+                });
+
             modelBuilder.Entity("YooVisitApi.Models.UserApplication", b =>
                 {
                     b.Property<Guid>("IdUtilisateur")
@@ -155,6 +205,35 @@ namespace YooVisitApi.Migrations
                     b.HasKey("IdUtilisateur");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("YooVisitApi.Models.UserQuizAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AttemptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SelectedAnswerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("WasCorrect")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "QuizId")
+                        .IsUnique();
+
+                    b.ToTable("UserQuizAttempts");
                 });
 
             modelBuilder.Entity("YooVisitApi.Models.Zone", b =>
@@ -213,11 +292,40 @@ namespace YooVisitApi.Migrations
                     b.Navigation("Pastille");
                 });
 
+            modelBuilder.Entity("YooVisitApi.Models.Quiz", b =>
+                {
+                    b.HasOne("YooVisitApi.Models.Pastille", "Pastille")
+                        .WithMany("Quizzes")
+                        .HasForeignKey("PastilleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pastille");
+                });
+
+            modelBuilder.Entity("YooVisitApi.Models.QuizAnswer", b =>
+                {
+                    b.HasOne("YooVisitApi.Models.Quiz", "Quiz")
+                        .WithMany("Answers")
+                        .HasForeignKey("QuizId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quiz");
+                });
+
             modelBuilder.Entity("YooVisitApi.Models.Pastille", b =>
                 {
                     b.Navigation("Photos");
 
+                    b.Navigation("Quizzes");
+
                     b.Navigation("Ratings");
+                });
+
+            modelBuilder.Entity("YooVisitApi.Models.Quiz", b =>
+                {
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("YooVisitApi.Models.UserApplication", b =>

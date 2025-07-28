@@ -12,6 +12,22 @@ namespace YooVisitApi.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "UserQuizAttempts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    QuizId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SelectedAnswerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AttemptedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    WasCorrect = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserQuizAttempts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -112,6 +128,47 @@ namespace YooVisitApi.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Quizzes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    QuestionText = table.Column<string>(type: "text", nullable: false),
+                    PastilleId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Quizzes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Quizzes_Pastilles_PastilleId",
+                        column: x => x.PastilleId,
+                        principalTable: "Pastilles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QuizAnswers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    AnswerText = table.Column<string>(type: "text", nullable: false),
+                    IsCorrect = table.Column<bool>(type: "boolean", nullable: false),
+                    QuizId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QuizAnswers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_QuizAnswers_Quizzes_QuizId",
+                        column: x => x.QuizId,
+                        principalTable: "Quizzes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_PastilleRatings_PastilleId_RaterUserId",
                 table: "PastilleRatings",
@@ -127,6 +184,22 @@ namespace YooVisitApi.Migrations
                 name: "IX_Photos_PastilleId",
                 table: "Photos",
                 column: "PastilleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuizAnswers_QuizId",
+                table: "QuizAnswers",
+                column: "QuizId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Quizzes_PastilleId",
+                table: "Quizzes",
+                column: "PastilleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserQuizAttempts_UserId_QuizId",
+                table: "UserQuizAttempts",
+                columns: new[] { "UserId", "QuizId" },
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -139,7 +212,16 @@ namespace YooVisitApi.Migrations
                 name: "Photos");
 
             migrationBuilder.DropTable(
+                name: "QuizAnswers");
+
+            migrationBuilder.DropTable(
+                name: "UserQuizAttempts");
+
+            migrationBuilder.DropTable(
                 name: "Zones");
+
+            migrationBuilder.DropTable(
+                name: "Quizzes");
 
             migrationBuilder.DropTable(
                 name: "Pastilles");
