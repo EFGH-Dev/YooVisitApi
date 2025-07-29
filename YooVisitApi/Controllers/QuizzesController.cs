@@ -56,23 +56,31 @@ namespace YooVisitApi.Controllers
             return CreatedAtAction(nameof(GetQuizzes), new { pastilleId = pastille.Id, quizId = quiz.Id }, quizDto);
         }
 
-        // --- RÉCUPÉRER un quiz spécifique ---
-        [HttpGet("{quizId}")]
+        // --- RÉCUPÉRER tous les quiz d'une pastille ---
+        [HttpGet]
         public async Task<ActionResult<List<QuizDto>>> GetQuizzes(Guid pastilleId)
         {
-            var quizzes = await _context.Quizzes
+            // 1. On récupère les données BRUTES de la BDD d'abord.
+            // On appelle ToListAsync() AVANT le Select() qui utilise notre méthode custom.
+            // Ceci "matérialise" la requête : les données quittent la BDD et arrivent dans une liste C#.
+            var quizzesFromDb = await _context.Quizzes
                 .Where(q => q.PastilleId == pastilleId)
                 .Include(q => q.Answers)
                 .AsNoTracking()
-                .Select(q => MapToDto(q))
-                .ToListAsync();
+                .ToListAsync(); // <--- Le changement crucial est ici !
 
-            return Ok(quizzes);
+            // 2. PUIS, une fois les données en mémoire, on mappe les objets vers les DTOs.
+            // Ce .Select() est maintenant un LINQ to Objects, pas un LINQ to Entities. Il s'exécute en C#.
+            var quizzesDto = quizzesFromDb
+                .Select(q => MapToDto(q))
+                .ToList(); // Pas besoin de version async ici, c'est une opération en mémoire.
+
+            return Ok(quizzesDto);
         }
 
         // --- RÉCUPÉRER un quiz spécifique ---
         [HttpGet("{quizId}")]
-        public async Task<ActionResult<QuizDto>> GetQuiz(Guid pastilleId, Guid quizId)
+        public async Task<ActionResult<QuizDto>> GetQuizForPastille(Guid pastilleId, Guid quizId)
         {
             var quiz = await _context.Quizzes
                 .Include(q => q.Answers)
@@ -146,11 +154,11 @@ namespace YooVisitApi.Controllers
                 Title = quiz.Title,
                 Description = quiz.Description,
                 QuestionText = quiz.QuestionText,
-                Answers = quiz.Answers.Select(a => new QuizAnswerDto
+                Answers = quiz.Answers?.Select(a => new QuizAnswerDto
                 {
                     Id = a.Id,
                     AnswerText = a.AnswerText
-                }).ToList()
+                }).ToList() ?? new List<QuizAnswerDto>()
             };
         }
     }

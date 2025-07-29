@@ -50,33 +50,6 @@ public class UsersController : ControllerBase
         return StatusCode(201, "Utilisateur créé avec succès.");
     }
 
-    [HttpPost("login")]
-    public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto loginDto)
-    {
-        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == loginDto.Email);
-        if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.HashedPassword)) // Correction ici
-        {
-            return Unauthorized("Email ou mot de passe invalide.");
-        }
-
-        (string token, DateTime expiration) = _tokenService.GenerateJwtToken(user);
-
-        var userDto = new UserDto
-        {
-            IdUtilisateur = user.IdUtilisateur,
-            Email = user.Email,
-            Nom = user.Nom,
-            Biographie = user.Biographie,
-            Experience = user.Experience,
-            DateInscription = user.DateInscription,
-            ProfilePictureUrl = user.ProfilePictureFileName == null
-                ? null
-                : $"{Request.Scheme}://{Request.Host}/storage/avatars/{user.ProfilePictureFileName}"
-        };
-
-        return Ok(new LoginResponseDto { Token = token, Expiration = expiration, User = userDto });
-    }
-
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> GetMyProfile()
