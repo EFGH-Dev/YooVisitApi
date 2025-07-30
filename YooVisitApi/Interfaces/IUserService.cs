@@ -1,5 +1,5 @@
-﻿using YooVisitApi.Dtos;
-using YooVisitApi.Models;
+﻿using YooVisitApi.Dtos.User;
+using YooVisitApi.Models.UserModel;
 
 namespace YooVisitApi.Services;
 

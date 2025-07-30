@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using YooVisitApi.Data;
-using YooVisitApi.Dtos;
-using YooVisitApi.Models;// Assure-toi que le namespace de IUserService est bien importé
+using YooVisitApi.Dtos.User;
+using YooVisitApi.Models.UserModel;// Assure-toi que le namespace de IUserService est bien importé
 
 namespace YooVisitApi.Services;
 

@@ -1,4 +1,4 @@
-﻿using YooVisitApi.Models;
+﻿using YooVisitApi.Models.UserModel;
 
 namespace YooVisitApi.Interfaces;
 

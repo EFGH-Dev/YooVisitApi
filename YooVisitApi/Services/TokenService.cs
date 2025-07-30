@@ -3,7 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using YooVisitApi.Interfaces; // Pour l'interface
-using YooVisitApi.Models;   // Pour UserApplication
+using YooVisitApi.Models.UserModel;   // Pour UserApplication
 
 namespace YooVisitApi.Services; // <-- LA CORRECTION EST ICI
 

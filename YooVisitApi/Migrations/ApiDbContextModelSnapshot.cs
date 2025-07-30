@@ -22,7 +22,7 @@ namespace YooVisitApi.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("YooVisitApi.Models.Pastille", b =>
+            modelBuilder.Entity("YooVisitApi.Models.PastilleModel.Pastille", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,6 +30,9 @@ namespace YooVisitApi.Migrations
 
                     b.Property<double?>("Altitude")
                         .HasColumnType("double precision");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
@@ -63,7 +66,7 @@ namespace YooVisitApi.Migrations
                     b.ToTable("Pastilles");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.PastilleRating", b =>
+            modelBuilder.Entity("YooVisitApi.Models.PastilleModel.PastilleRating", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -89,7 +92,7 @@ namespace YooVisitApi.Migrations
                     b.ToTable("PastilleRatings");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Photo", b =>
+            modelBuilder.Entity("YooVisitApi.Models.PhotoModel.Photo", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -116,11 +119,14 @@ namespace YooVisitApi.Migrations
                     b.ToTable("Photos");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Quiz", b =>
+            modelBuilder.Entity("YooVisitApi.Models.QuizModel.Quiz", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -143,7 +149,7 @@ namespace YooVisitApi.Migrations
                     b.ToTable("Quizzes");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.QuizAnswer", b =>
+            modelBuilder.Entity("YooVisitApi.Models.QuizModel.QuizAnswer", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -166,7 +172,7 @@ namespace YooVisitApi.Migrations
                     b.ToTable("QuizAnswers");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.UserApplication", b =>
+            modelBuilder.Entity("YooVisitApi.Models.UserModel.UserApplication", b =>
                 {
                     b.Property<Guid>("IdUtilisateur")
                         .ValueGeneratedOnAdd()
@@ -204,7 +210,7 @@ namespace YooVisitApi.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.UserQuizAttempt", b =>
+            modelBuilder.Entity("YooVisitApi.Models.UserModel.UserQuizAttempt", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -233,7 +239,7 @@ namespace YooVisitApi.Migrations
                     b.ToTable("UserQuizAttempts");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Zone", b =>
+            modelBuilder.Entity("YooVisitApi.Models.ZoneModel.Zone", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -258,9 +264,9 @@ namespace YooVisitApi.Migrations
                     b.ToTable("Zones");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Pastille", b =>
+            modelBuilder.Entity("YooVisitApi.Models.PastilleModel.Pastille", b =>
                 {
-                    b.HasOne("YooVisitApi.Models.UserApplication", "User")
+                    b.HasOne("YooVisitApi.Models.UserModel.UserApplication", "User")
                         .WithMany("Pastilles")
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -269,18 +275,18 @@ namespace YooVisitApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.PastilleRating", b =>
+            modelBuilder.Entity("YooVisitApi.Models.PastilleModel.PastilleRating", b =>
                 {
-                    b.HasOne("YooVisitApi.Models.Pastille", null)
+                    b.HasOne("YooVisitApi.Models.PastilleModel.Pastille", null)
                         .WithMany("Ratings")
                         .HasForeignKey("PastilleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Photo", b =>
+            modelBuilder.Entity("YooVisitApi.Models.PhotoModel.Photo", b =>
                 {
-                    b.HasOne("YooVisitApi.Models.Pastille", "Pastille")
+                    b.HasOne("YooVisitApi.Models.PastilleModel.Pastille", "Pastille")
                         .WithMany("Photos")
                         .HasForeignKey("PastilleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -289,9 +295,9 @@ namespace YooVisitApi.Migrations
                     b.Navigation("Pastille");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Quiz", b =>
+            modelBuilder.Entity("YooVisitApi.Models.QuizModel.Quiz", b =>
                 {
-                    b.HasOne("YooVisitApi.Models.Pastille", "Pastille")
+                    b.HasOne("YooVisitApi.Models.PastilleModel.Pastille", "Pastille")
                         .WithMany("Quizzes")
                         .HasForeignKey("PastilleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -300,9 +306,9 @@ namespace YooVisitApi.Migrations
                     b.Navigation("Pastille");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.QuizAnswer", b =>
+            modelBuilder.Entity("YooVisitApi.Models.QuizModel.QuizAnswer", b =>
                 {
-                    b.HasOne("YooVisitApi.Models.Quiz", "Quiz")
+                    b.HasOne("YooVisitApi.Models.QuizModel.Quiz", "Quiz")
                         .WithMany("Answers")
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -311,7 +317,7 @@ namespace YooVisitApi.Migrations
                     b.Navigation("Quiz");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Pastille", b =>
+            modelBuilder.Entity("YooVisitApi.Models.PastilleModel.Pastille", b =>
                 {
                     b.Navigation("Photos");
 
@@ -320,12 +326,12 @@ namespace YooVisitApi.Migrations
                     b.Navigation("Ratings");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.Quiz", b =>
+            modelBuilder.Entity("YooVisitApi.Models.QuizModel.Quiz", b =>
                 {
                     b.Navigation("Answers");
                 });
 
-            modelBuilder.Entity("YooVisitApi.Models.UserApplication", b =>
+            modelBuilder.Entity("YooVisitApi.Models.UserModel.UserApplication", b =>
                 {
                     b.Navigation("Pastilles");
                 });

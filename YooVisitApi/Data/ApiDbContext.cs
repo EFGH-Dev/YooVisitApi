@@ -1,5 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using YooVisitApi.Models; // Assure-toi que ce namespace est correct
+using YooVisitApi.Models.PastilleModel;
+using YooVisitApi.Models.PhotoModel;
+using YooVisitApi.Models.QuizModel;
+using YooVisitApi.Models.UserModel;
+using YooVisitApi.Models.ZoneModel; // Assure-toi que ce namespace est correct
 
 namespace YooVisitApi.Data;
 
