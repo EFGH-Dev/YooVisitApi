@@ -20,7 +20,7 @@ public class TokenService : ITokenService
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
-        var expirationTime = DateTime.UtcNow.AddHours(1);
+        var expirationTime = DateTime.UtcNow.AddHours(24);
 
         var claims = new[]
         {
