@@ -9,7 +9,7 @@ public class Photo
     [Key]
     public Guid Id { get; set; }
     public string FileName { get; set; }
-    public string FilePath { get; set; }
+    public string FileKey { get; set; }
     public DateTime UploadedAt { get; set; }
     [Required]
     public Guid PastilleId { get; set; }

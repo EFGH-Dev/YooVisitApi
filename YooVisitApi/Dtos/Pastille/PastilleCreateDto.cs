@@ -16,7 +16,8 @@ namespace YooVisitApi.Dtos.Pastille
         public string? PeriodeConstruction { get; set; }
         public string? HorairesOuverture { get; set; }
         public DateTime CreatedAt { get; set; }
+
         [Required]
-        public IFormFile File { get; set; } // La première photo de la pastille
+        public string FileKey { get; set; } = string.Empty;
     }
 }

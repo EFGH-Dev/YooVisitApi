@@ -19,5 +19,6 @@ namespace YooVisitApi.Dtos.Pastille
         public double AverageRating { get; set; }
         public List<PhotoDto> Photos { get; set; } = new();
         public bool IsOwner { get; set; }
+        public string? PhotoUrl { get; set; }
     }
 }

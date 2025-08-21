@@ -12,15 +12,15 @@ using YooVisitApi.Data;
 namespace YooVisitApi.Migrations
 {
     [DbContext(typeof(ApiDbContext))]
-    [Migration("20250730104552_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250818221005_UpdatePastillesLogic")]
+    partial class UpdatePastillesLogic
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.7")
+                .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -101,11 +101,11 @@ namespace YooVisitApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("FileName")
+                    b.Property<string>("FileKey")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("FilePath")
+                    b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("text");
 

@@ -14,12 +14,12 @@ WORKDIR /src
 # --- OPTIMISATION DU CACHE ---
 # On copie d'abord uniquement le .csproj pour restaurer les dépendances.
 # Cette étape ne changera que si tu ajoutes un paquet NuGet.
-COPY ["YooVisitApi/YooVisitApi/YooVisitApi.csproj", "YooVisitApi/"]
+COPY ["YooVisitApi/YooVisitApi.csproj", "YooVisitApi/"]
 RUN dotnet restore "./YooVisitApi/YooVisitApi.csproj"
 
 # Maintenant, on copie le reste du code source.
 COPY . .
-WORKDIR "/src/YooVisitApi/YooVisitApi"
+WORKDIR "/src/YooVisitApi"
 RUN dotnet build "YooVisitApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Étape 3 : La publication

@@ -114,7 +114,7 @@ namespace YooVisitApi.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FileName = table.Column<string>(type: "text", nullable: false),
-                    FilePath = table.Column<string>(type: "text", nullable: false),
+                    FileKey = table.Column<string>(type: "text", nullable: false),
                     UploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     PastilleId = table.Column<Guid>(type: "uuid", nullable: false)
                 },

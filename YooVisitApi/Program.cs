@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using YooVisitApi.Data;
 using YooVisitApi.Interfaces;
 using YooVisitApi.Services;
+using Amazon.S3;
+using Amazon.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,9 +17,35 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApiDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// --- Configuration du client S3 pour OVHcloud ---
+
+// 1. Récupérer les infos de appsettings.json
+var s3ConfigSection = builder.Configuration.GetSection("ObjectStorage");
+var serviceUrl = s3ConfigSection["ServiceUrl"];
+var accessKey = s3ConfigSection["AccessKey"];
+var secretKey = s3ConfigSection["SecretKey"];
+
+// 2. Créer l'objet de configuration S3 COMPLET
+var s3Config = new AmazonS3Config
+{
+    ServiceURL = serviceUrl,
+    AuthenticationRegion = "GRA", // Ta région OVH
+    ForcePathStyle = true
+};
+var credentials = new BasicAWSCredentials(accessKey, secretKey);
+
+// 3. Inscrire le client S3 dans l'injection de dépendances pour qu'il soit réutilisable
+builder.Services.AddSingleton<IAmazonS3>(new AmazonS3Client(credentials, s3Config));
+
+// 4. Inscrire ton propre service qui va utiliser le client S3
+builder.Services.AddScoped<IObjectStorageService, S3StorageService>();
+
+// --- Fin de la configuration S3 ---
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<IObjectStorageService, S3StorageService>();
 
 builder.Services.AddCors(options =>
 {
@@ -48,8 +75,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    // Indique au middleware de faire confiance à n'importe quel proxy.
-    // Pour la production, tu devrais limiter ça à l'IP de ton vrai proxy.
     options.ForwardedHeaders =
         ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedHost | ForwardedHeaders.XForwardedProto;
     options.KnownNetworks.Clear();
@@ -71,7 +96,12 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApiDbContext>();
-        await context.Database.MigrateAsync();
+        // On vérifie s'il y a des migrations en attente avant de les appliquer
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            await context.Database.MigrateAsync();
+        }
+        // Le seeder peut être appelé ensuite
         await DataSeeder.SeedAsync(services);
     }
     catch (Exception ex)
@@ -89,13 +119,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "storage")),
-    RequestPath = "/storage"
-});
 
 app.UseCors("_myAllowSpecificOrigins");
 app.UseAuthentication();

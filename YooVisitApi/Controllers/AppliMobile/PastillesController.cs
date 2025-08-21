@@ -3,269 +3,357 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using YooVisitApi.Data;
-using YooVisitApi.Dtos.Photo;
 using YooVisitApi.Dtos.Pastille;
+using YooVisitApi.Dtos.Photo;
+using YooVisitApi.Dtos.Storage;
 using YooVisitApi.Models.PastilleModel;
 using YooVisitApi.Models.PhotoModel;
+using Microsoft.Extensions.Logging;
+using YooVisitApi.Services; // AJOUTÉ : Le using pour notre nouveau service
 
-namespace YooVisitApi.Controllers.AppliMobile;
-
-[ApiController]
-[Route("api/[controller]")]
-[Authorize]
-public class PastillesController : ControllerBase
+namespace YooVisitApi.Controllers.AppliMobile
 {
-    private readonly ApiDbContext _context;
-    private readonly IWebHostEnvironment _hostingEnvironment;
-
-    public PastillesController(ApiDbContext context, IWebHostEnvironment hostingEnvironment)
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class PastillesController : ControllerBase
     {
-        _context = context;
-        _hostingEnvironment = hostingEnvironment;
-    }
+        private readonly ApiDbContext _context;
+        private readonly IObjectStorageService _storageService; // CHANGÉ : On injecte notre service
+        private readonly IConfiguration _configuration; // AJOUTÉ : Pour lire la config (URL de base S3)
+        private readonly ILogger<PastillesController> _logger;
 
-    [HttpPost]
-    public async Task<IActionResult> CreatePastille([FromForm] PastilleCreateDto request)
-    {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        // Le constructeur est mis à jour pour injecter les nouveaux services
+        public PastillesController(ApiDbContext context, IObjectStorageService storageService, IConfiguration configuration, ILogger<PastillesController> logger)
         {
-            var pastille = new Pastille
-            {
-                Id = Guid.NewGuid(),
-                Title = request.Title,
-                Description = request.Description,
-                Latitude = request.Latitude,
-                Longitude = request.Longitude,
-                Altitude = request.Altitude,
-                StyleArchitectural = request.StyleArchitectural,
-                PeriodeConstruction = request.PeriodeConstruction,
-                HorairesOuverture = request.HorairesOuverture,
-                CreatedByUserId = userId,
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.Pastilles.Add(pastille);
-            await _context.SaveChangesAsync();
+            _context = context;
+            _storageService = storageService;
+            _configuration = configuration;
+            _logger = logger;
+        }
 
-            var uploadsFolder = Path.Combine(_hostingEnvironment.ContentRootPath, "storage");
-            var fileName = $"{pastille.Id}_{DateTime.UtcNow.Ticks}.jpg";
-            var filePath = Path.Combine(uploadsFolder, fileName);
-            await using (var fileStream = new FileStream(filePath, FileMode.Create))
+        [HttpPost("generate-upload-url")]
+        public IActionResult GenerateUploadUrl([FromBody] UploadUrlRequestDto requestDto)
+        {
+            // On vérifie que le nom de fichier envoyé par Flutter est bien un GUID
+            // pour des raisons de sécurité et de cohérence.
+            if (!Guid.TryParse(Path.GetFileNameWithoutExtension(requestDto.FileName), out _))
             {
-                await request.File.CopyToAsync(fileStream);
+                return BadRequest("Le nom de fichier doit être un GUID.jpg valide.");
             }
 
-            var photo = new Photo
-            {
-                Id = Guid.NewGuid(),
-                FileName = fileName,
-                FilePath = filePath,
-                UploadedAt = DateTime.UtcNow,
-                PastilleId = pastille.Id
-            };
-            _context.Photos.Add(photo);
+            // ON UTILISE LE NOM DE FICHIER FOURNI PAR LE CLIENT
+            var fileKey = requestDto.FileName;
 
-            // On trouve l'utilisateur et on lui donne de l'XP
-            var user = await _context.Users.FindAsync(userId);
-            if (user != null)
+            var presignedUrl = _storageService.GeneratePresignedUploadUrl(fileKey, requestDto.ContentType);
+
+            // On renvoie le même fileKey pour confirmation
+            return Ok(new { uploadUrl = presignedUrl, fileKey });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreatePastille([FromBody] PastilleCreateDto request)
+        {
+            if (string.IsNullOrEmpty(request.FileKey))
             {
-                user.Experience += 50; // 50 XP par pastille créée
+                return BadRequest("Le champ FileKey est requis.");
             }
 
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Création de la pastille
+                var pastille = new Pastille
+                {
+                    Id = Guid.NewGuid(),
+                    Title = request.Title,
+                    Description = request.Description,
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude,
+                    Altitude = request.Altitude,
+                    StyleArchitectural = request.StyleArchitectural,
+                    PeriodeConstruction = request.PeriodeConstruction,
+                    HorairesOuverture = request.HorairesOuverture,
+                    CreatedByUserId = userId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Pastilles.Add(pastille);
 
-            var createdPastille = await _context.Pastilles
+                // Création de la photo
+                var photo = new Photo
+                {
+                    Id = Guid.NewGuid(),
+                    FileName = Path.GetFileName(request.FileKey),
+                    FileKey = request.FileKey,
+                    UploadedAt = DateTime.UtcNow,
+                    PastilleId = pastille.Id
+                };
+                _context.Photos.Add(photo);
+
+                // Mise à jour de l'expérience utilisateur
+                var user = await _context.Users.FindAsync(userId);
+                if (user != null)
+                {
+                    user.Experience += 50;
+                }
+
+                // Sauvegarde et commit
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                var createdPastille = await _context.Pastilles
+                    .Include(p => p.User)
+                    .Include(p => p.Photos)
+                    .FirstAsync(p => p.Id == pastille.Id);
+
+                return Ok(MapToDto(createdPastille));
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Erreur interne du serveur: {ex.Message}");
+            }
+        }
+
+        [HttpPut("{pastilleId}/photo")]
+        public async Task<IActionResult> UpdatePastillePhoto([FromRoute] Guid pastilleId, [FromBody] UpdatePhotoDto request)
+        {
+            // 1. Sécurité : Vérifier que l'utilisateur est bien le propriétaire
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var pastille = await _context.Pastilles
+                .Include(p => p.Photos) // Important de charger les photos existantes !
+                .FirstOrDefaultAsync(p => p.Id == pastilleId);
+
+            if (pastille == null)
+            {
+                return NotFound("Pastille non trouvée.");
+            }
+
+            if (pastille.CreatedByUserId != userId)
+            {
+                return Forbid("Action non autorisée. Vous n'êtes pas le propriétaire de cette pastille.");
+            }
+
+            // 2. Nettoyage : Supprimer l'ancienne photo du stockage S3
+            var oldPhoto = pastille.Photos.FirstOrDefault();
+            if (oldPhoto != null && !string.IsNullOrEmpty(oldPhoto.FileKey))
+            {
+                // On demande au service de supprimer l'ancien fichier
+                await _storageService.DeleteFileAsync(oldPhoto.FileKey);
+            }
+
+            // 3. Mise à jour (ou création) en base de données
+            if (oldPhoto != null)
+            {
+                // La pastille avait déjà une photo, on la met à jour
+                oldPhoto.FileKey = request.FileKey;
+                oldPhoto.FileName = Path.GetFileName(request.FileKey);
+                oldPhoto.UploadedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                // La pastille n'avait pas de photo, on en crée une nouvelle
+                var newPhoto = new Photo
+                {
+                    Id = Guid.NewGuid(),
+                    FileKey = request.FileKey,
+                    FileName = Path.GetFileName(request.FileKey),
+                    UploadedAt = DateTime.UtcNow,
+                    PastilleId = pastilleId
+                };
+                _context.Photos.Add(newPhoto);
+            }
+
+            // 4. Sauvegarder les changements
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Photo mise à jour avec succès." });
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<PastilleDto>>> GetAllPastilles()
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid.TryParse(userIdString, out Guid currentUserId);
+
+            var baseUrl = $"{_configuration["ObjectStorage:ServiceUrl"]}/{_configuration["ObjectStorage:BucketName"]}";
+
+            var dtos = await _context.Pastilles
                 .Include(p => p.User)
                 .Include(p => p.Photos)
-                .FirstAsync(p => p.Id == pastille.Id);
-
-            return Ok(MapToDto(createdPastille));
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            return StatusCode(500, $"Erreur interne du serveur : {ex.Message}");
-        }
-    }
-
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<PastilleDto>>> GetAllPastilles()
-    {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        Guid.TryParse(userIdString, out Guid currentUserId);
-
-        var dtos = await _context.Pastilles
-            .Include(p => p.User)
-            .Include(p => p.Photos)
-            .Include(p => p.Ratings)
-            .AsNoTracking()
-            .Select(p => new PastilleDto
-            {
-                Id = p.Id,
-                Title = p.Title,
-                Description = p.Description,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
-                // Remplacer cette ligne dans le Select :
-                CreatedByUserName = p.User != null
-                    ? p.User.Nom ?? (p.User.Email != null ? p.User.Email.Substring(0, p.User.Email.IndexOf('@')) : "Inconnu")
-                    : "Inconnu",
-                AverageRating = p.Ratings.Any() ? p.Ratings.Average(r => r.RatingValue) : 0,
-                IsOwner = p.CreatedByUserId == currentUserId,
-                Photos = p.Photos.Select(photo => new PhotoDto
+                .Include(p => p.Ratings)
+                .AsNoTracking()
+                .Select(p => new PastilleDto
                 {
-                    Id = photo.Id,
-                    ImageUrl = $"{Request.Scheme}://{Request.Host}/storage/{photo.FileName}",
-                    UploadedAt = photo.UploadedAt
-                }).ToList()
-            })
-            .ToListAsync();
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    CreatedByUserName = p.User == null ? "Inconnu" : p.User.Nom,
+                    AverageRating = p.Ratings.Any() ? p.Ratings.Average(r => r.RatingValue) : 0,
+                    PhotoUrl = p.Photos.Any(ph => !string.IsNullOrEmpty(ph.FileKey))
+                        ? _storageService.GeneratePresignedGetUrl(p.Photos.First(ph => !string.IsNullOrEmpty(ph.FileKey)).FileKey)
+                        : null,
+                    IsOwner = p.CreatedByUserId == currentUserId,
+                    Photos = p.Photos
+                        .Where(ph => !string.IsNullOrEmpty(ph.FileKey))
+                        .Select(photo => new PhotoDto
+                        {
+                            Id = photo.Id,
+                            ImageUrl = _storageService.GeneratePresignedGetUrl(photo.FileKey),
+                            UploadedAt = photo.UploadedAt
+                        }).ToList()
+                })
+                .ToListAsync();
 
-        return Ok(dtos);
-    }
-
-    [HttpGet("my-pastilles")]
-    public async Task<ActionResult<IEnumerable<PastilleDto>>> GetMyPastilles()
-    {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-        var pastillesFromDb = await _context.Pastilles
-            .Where(p => p.CreatedByUserId == userId)
-            .Include(p => p.User)
-            .Include(p => p.Photos)
-            .Include(p => p.Ratings)
-            .AsNoTracking()
-            .ToListAsync();
-
-        var dtos = pastillesFromDb.Select(p => MapToDto(p, userId)).ToList();
-
-        return Ok(dtos);
-    }
-
-
-    [Authorize]
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdatePastille(Guid id, [FromBody] PastilleUpdateDto updateDto)
-    {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var pastille = await _context.Pastilles.FindAsync(id);
-
-        if (pastille == null) return NotFound("Pastille non trouvée.");
-
-        // CONTRÔLE DE SÉCURITÉ : Seul le propriétaire peut modifier.
-        if (pastille.CreatedByUserId != userId)
-        {
-            return Forbid("Vous n'avez pas l'autorisation de modifier cette pastille.");
+            return Ok(dtos);
         }
 
-        pastille.Title = updateDto.Title;
-        pastille.Description = updateDto.Description;
-        pastille.Latitude = updateDto.Latitude;
-        pastille.Longitude = updateDto.Longitude;
-        pastille.StyleArchitectural = updateDto.StyleArchitectural;
-        pastille.PeriodeConstruction = updateDto.PeriodeConstruction;
-        pastille.HorairesOuverture = updateDto.HorairesOuverture;
-        await _context.SaveChangesAsync();
-        return NoContent();
-    }
-
-    [Authorize]
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePastille(Guid id)
-    {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var pastille = await _context.Pastilles.Include(p => p.Photos).FirstOrDefaultAsync(p => p.Id == id);
-
-        if (pastille == null) return NotFound("Pastille non trouvée.");
-
-        // CONTRÔLE DE SÉCURITÉ : Seul le propriétaire peut supprimer.
-        if (pastille.CreatedByUserId != userId)
+        [HttpGet("my-pastilles")]
+        public async Task<ActionResult<IEnumerable<PastilleDto>>> GetMyPastilles()
         {
-            return Forbid("Vous n'avez pas l'autorisation de supprimer cette pastille.");
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var pastillesFromDb = await _context.Pastilles
+                .Where(p => p.CreatedByUserId == userId)
+                .Include(p => p.User)
+                .Include(p => p.Photos)
+                .Include(p => p.Ratings)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var dtos = pastillesFromDb.Select(p => MapToDto(p, userId)).ToList();
+
+            return Ok(dtos);
         }
 
-        // On supprime les fichiers physiques associés
-        foreach (var photo in pastille.Photos)
+        [HttpGet("{id}")]
+        [AllowAnonymous] // Ou [Authorize] si tu veux que seuls les connectés voient les détails
+        public async Task<ActionResult<PastilleDto>> GetPastilleById(Guid id)
         {
-            var filePath = Path.Combine(_hostingEnvironment.ContentRootPath, "storage", photo.FileName);
-            if (System.IO.File.Exists(filePath))
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid.TryParse(userIdString, out Guid currentUserId);
+
+            // On récupère la pastille ET ses données liées (photos, utilisateur, notes)
+            var pastille = await _context.Pastilles
+                .Include(p => p.User)
+                .Include(p => p.Photos)
+                .Include(p => p.Ratings)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pastille == null)
             {
-                System.IO.File.Delete(filePath);
+                return NotFound("Pastille non trouvée.");
             }
+
+            // On utilise notre super fonction MapToDto qui fait tout le travail
+            var dto = MapToDto(pastille, currentUserId);
+
+            return Ok(dto);
         }
 
-        // La suppression de la pastille entraînera la suppression en cascade des photos
-        // et des ratings associés si la base de données est bien configurée.
-        _context.Pastilles.Remove(pastille);
-        await _context.SaveChangesAsync();
-
-        return NoContent(); // Succès
-    }
-
-    [Authorize]
-    [HttpPost("{id}/rate")]
-    public async Task<IActionResult> RatePastille(Guid id, [FromBody] PastilleRatingDto request)
-    {
-        var raterUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var pastilleToRate = await _context.Pastilles.FindAsync(id);
-
-        if (pastilleToRate == null) return NotFound("Pastille non trouvée.");
-        if (pastilleToRate.CreatedByUserId == raterUserId) return BadRequest("Vous ne pouvez pas noter votre propre pastille.");
-
-        var existingRating = await _context.PastilleRatings
-            .FirstOrDefaultAsync(r => r.PastilleId == id && r.RaterUserId == raterUserId);
-
-        if (existingRating != null) return Conflict("Vous avez déjà noté cette pastille.");
-
-        _context.PastilleRatings.Add(new PastilleRating
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePastille(Guid id, [FromBody] PastilleUpdateDto updateDto)
         {
-            Id = Guid.NewGuid(),
-            PastilleId = id,
-            RaterUserId = raterUserId,
-            RatingValue = request.Rating,
-            RatedAt = DateTime.UtcNow
-        });
+            // ... (Aucun changement dans cette méthode)
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var pastille = await _context.Pastilles.FindAsync(id);
+            if (pastille == null) return NotFound("Pastille non trouvée.");
+            if (pastille.CreatedByUserId != userId) return Forbid("Vous n'avez pas l'autorisation de modifier cette pastille.");
+            pastille.Title = updateDto.Title;
+            pastille.Description = updateDto.Description;
+            pastille.Latitude = updateDto.Latitude;
+            pastille.Longitude = updateDto.Longitude;
+            pastille.StyleArchitectural = updateDto.StyleArchitectural;
+            pastille.PeriodeConstruction = updateDto.PeriodeConstruction;
+            pastille.HorairesOuverture = updateDto.HorairesOuverture;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
 
-        var photoOwner = await _context.Users.FindAsync(pastilleToRate.CreatedByUserId);
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new { Message = "Merci pour votre vote !"});
-    }
-
-    private PastilleDto MapToDto(Pastille pastille, Guid? currentUserId = null)
-    {
-        return new PastilleDto
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePastille(Guid id)
         {
-            Id = pastille.Id,
-            Title = pastille.Title,
-            Description = pastille.Description,
-            Latitude = pastille.Latitude,
-            Longitude = pastille.Longitude,
-            Altitude = pastille.Altitude,
-            StyleArchitectural = pastille.StyleArchitectural,
-            PeriodeConstruction = pastille.PeriodeConstruction,
-            HorairesOuverture = pastille.HorairesOuverture,
-            CreatedByUserId = pastille.CreatedByUserId,
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var pastille = await _context.Pastilles.Include(p => p.Photos).FirstOrDefaultAsync(p => p.Id == id);
 
-            // On va chercher le nom dans l'objet User qui a été joint à la requête
-            CreatedByUserName = pastille.User?.Nom ?? pastille.User?.Email.Split('@').First() ?? "Inconnu",
+            if (pastille == null) return NotFound("Pastille non trouvée.");
 
-            // On calcule la note moyenne. S'il n'y a pas de notes, on met 0.
-            AverageRating = pastille.Ratings.Any() ? pastille.Ratings.Average(r => r.RatingValue) : 0,
-
-            // On transforme la liste des entités Photo en une liste de PhotoDto
-            Photos = pastille.Photos.Select(photo => new PhotoDto
+            if (pastille.CreatedByUserId != userId)
             {
-                Id = photo.Id,
-                // On construit l'URL complète de l'image
-                ImageUrl = $"{Request.Scheme}://{Request.Host}/storage/{photo.FileName}",
-                UploadedAt = photo.UploadedAt
-            }).ToList()
-        };
+                return Forbid("Vous n'avez pas l'autorisation de supprimer cette pastille.");
+            }
+
+            // CHANGÉ : On supprime les fichiers du Stockage Objet avant de supprimer la pastille
+            foreach (var photo in pastille.Photos)
+            {
+                await _storageService.DeleteFileAsync(photo.FileKey);
+            }
+
+            _context.Pastilles.Remove(pastille);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPost("{id}/rate")]
+        public async Task<IActionResult> RatePastille(Guid id, [FromBody] PastilleRatingDto request)
+        {
+            // ... (Aucun changement dans cette méthode)
+            var raterUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var pastilleToRate = await _context.Pastilles.FindAsync(id);
+            if (pastilleToRate == null) return NotFound("Pastille non trouvée.");
+            if (pastilleToRate.CreatedByUserId == raterUserId) return BadRequest("Vous ne pouvez pas noter votre propre pastille.");
+            var existingRating = await _context.PastilleRatings.FirstOrDefaultAsync(r => r.PastilleId == id && r.RaterUserId == raterUserId);
+            if (existingRating != null) return Conflict("Vous avez déjà noté cette pastille.");
+            _context.PastilleRatings.Add(new PastilleRating { Id = Guid.NewGuid(), PastilleId = id, RaterUserId = raterUserId, RatingValue = request.Rating, RatedAt = DateTime.UtcNow });
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Merci pour votre vote !" });
+        }
+
+        private PastilleDto MapToDto(Pastille pastille, Guid? currentUserId = null)
+        {
+            // 1. On sélectionne la PREMIÈRE photo de la liste (s'il y en a une).
+            var firstPhoto = pastille.Photos?.FirstOrDefault(p => !string.IsNullOrEmpty(p.FileKey));
+
+            // 2. On génère l'URL pré-signée pour cette première photo uniquement.
+            // Si firstPhoto est null (pas de photos), photoUrl sera null. C'est parfait.
+            var photoUrl = firstPhoto != null
+                ? _storageService.GeneratePresignedGetUrl(firstPhoto.FileKey)
+                : null;
+            Console.WriteLine($"--- Server UTC Time: {DateTime.UtcNow:O} ---"); // "O" = format ISO 8601, très précis
+            Console.WriteLine($"--- URL Générée pour {firstPhoto.FileKey}: {photoUrl} ---");
+            return new PastilleDto
+            {
+                Id = pastille.Id,
+                Title = pastille.Title,
+                Description = pastille.Description,
+                Latitude = pastille.Latitude,
+                Longitude = pastille.Longitude,
+                Altitude = pastille.Altitude,
+                StyleArchitectural = pastille.StyleArchitectural,
+                PeriodeConstruction = pastille.PeriodeConstruction,
+                HorairesOuverture = pastille.HorairesOuverture,
+                CreatedByUserId = pastille.CreatedByUserId,
+                CreatedByUserName = pastille.User?.Nom ?? pastille.User?.Email.Split('@').First() ?? "Inconnu",
+                AverageRating = pastille.Ratings.Any() ? pastille.Ratings.Average(r => r.RatingValue) : 0,
+                PhotoUrl = photoUrl,
+                Photos = pastille.Photos
+                    .Where(p => !string.IsNullOrEmpty(p.FileKey))
+                    .Select(photo => new PhotoDto
+                    {
+                        Id = photo.Id,
+                        ImageUrl = _storageService.GeneratePresignedGetUrl(photo.FileKey),
+                        UploadedAt = photo.UploadedAt
+                    }).ToList(),
+            };
+        }
     }
 }
