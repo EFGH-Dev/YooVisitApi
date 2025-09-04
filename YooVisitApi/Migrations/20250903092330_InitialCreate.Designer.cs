@@ -12,8 +12,8 @@ using YooVisitApi.Data;
 namespace YooVisitApi.Migrations
 {
     [DbContext(typeof(ApiDbContext))]
-    [Migration("20250818221005_UpdatePastillesLogic")]
-    partial class UpdatePastillesLogic
+    [Migration("20250903092330_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -207,6 +207,12 @@ namespace YooVisitApi.Migrations
                     b.Property<string>("ProfilePictureFileName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("IdUtilisateur");
 

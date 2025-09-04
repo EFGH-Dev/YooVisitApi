@@ -38,7 +38,9 @@ namespace YooVisitApi.Migrations
                     Experience = table.Column<int>(type: "integer", nullable: false),
                     Nom = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Biographie = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    ProfilePictureFileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true)
+                    ProfilePictureFileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    RefreshToken = table.Column<string>(type: "text", nullable: true),
+                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {

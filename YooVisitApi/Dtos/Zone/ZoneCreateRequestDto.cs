@@ -1,13 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using YooVisitApi.Dtos.Shared;
 
 namespace YooVisitApi.Dtos.Zone;
-
-// Représente un point GPS simple
-public class LatLngDto
-{
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
-}
 
 public class ZoneCreateRequestDto
 {

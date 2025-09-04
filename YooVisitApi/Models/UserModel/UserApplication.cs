@@ -25,5 +25,7 @@ public class UserApplication
 
     [StringLength(200)]
     public string? ProfilePictureFileName { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
     public virtual ICollection<Pastille> Pastilles { get; set; } = new List<Pastille>();
 }
