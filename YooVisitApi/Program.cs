@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using YooVisitApi.Data;
 using YooVisitApi.Interfaces;
+using YooVisitApi.RealTime;
 using YooVisitApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,6 +48,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IObjectStorageService, S3StorageService>();
+
+builder.Services.AddSingleton<WebSocketConnectionManager>();
 
 builder.Services.AddCors(options =>
 {
@@ -125,6 +128,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
+
+app.UseWebSockets();
+app.UseMiddleware<WebSocketMiddleware>();
 
 app.UseCors("_myAllowSpecificOrigins");
 app.UseAuthentication();

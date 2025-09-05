@@ -3,12 +3,32 @@
   "WorkspaceRootPath": "C:\\DEV\\APIs\\YooVisitApi\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\controllers\\applimobile\\zonecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\controllers\\applimobile\\zonecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\realtime\\websocketconnectionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\realtime\\websocketconnectionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\realtime\\websocketmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\realtime\\websocketmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\controllers\\applimobile\\pastillescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\controllers\\applimobile\\pastillescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\controllers\\applimobile\\quizzescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\controllers\\applimobile\\quizzescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\dtos\\pastille\\pastillecreatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\dtos\\pastille\\pastillecreatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\controllers\\applimobile\\zonecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|solutionrelative:yoovisitapi\\controllers\\applimobile\\zonecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{17F90ABD-5D7D-4B09-AE28-ED43D2DBDE5A}|YooVisitApi\\YooVisitApi.csproj|c:\\dev\\apis\\yoovisitapi\\yoovisitapi\\dtos\\zone\\zoneresponsedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -34,7 +54,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -46,20 +66,83 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "WebSocketMiddleware.cs",
+              "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\RealTime\\WebSocketMiddleware.cs",
+              "RelativeDocumentMoniker": "YooVisitApi\\RealTime\\WebSocketMiddleware.cs",
+              "ToolTip": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\RealTime\\WebSocketMiddleware.cs",
+              "RelativeToolTip": "YooVisitApi\\RealTime\\WebSocketMiddleware.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-05T14:03:04.483Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "WebSocketConnectionManager.cs",
+              "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\RealTime\\WebSocketConnectionManager.cs",
+              "RelativeDocumentMoniker": "YooVisitApi\\RealTime\\WebSocketConnectionManager.cs",
+              "ToolTip": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\RealTime\\WebSocketConnectionManager.cs",
+              "RelativeToolTip": "YooVisitApi\\RealTime\\WebSocketConnectionManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-05T14:01:54.236Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "PastillesController.cs",
+              "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Controllers\\AppliMobile\\PastillesController.cs",
+              "RelativeDocumentMoniker": "YooVisitApi\\Controllers\\AppliMobile\\PastillesController.cs",
+              "ToolTip": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Controllers\\AppliMobile\\PastillesController.cs",
+              "RelativeToolTip": "YooVisitApi\\Controllers\\AppliMobile\\PastillesController.cs",
+              "ViewState": "AgIAADsBAAAAAAAAAAAiwGYBAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-04T06:48:46.334Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Program.cs",
               "RelativeDocumentMoniker": "YooVisitApi\\Program.cs",
               "ToolTip": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Program.cs",
               "RelativeToolTip": "YooVisitApi\\Program.cs",
-              "ViewState": "AgIAAEMAAAAAAAAAAAAAAFkAAAAHAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACcAAABUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-03T12:58:59.987Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
+              "Title": "QuizzesController.cs",
+              "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Controllers\\AppliMobile\\QuizzesController.cs",
+              "RelativeDocumentMoniker": "YooVisitApi\\Controllers\\AppliMobile\\QuizzesController.cs",
+              "ToolTip": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Controllers\\AppliMobile\\QuizzesController.cs",
+              "RelativeToolTip": "YooVisitApi\\Controllers\\AppliMobile\\QuizzesController.cs",
+              "ViewState": "AgIAAFUAAAAAAAAAAAAIwFwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-04T06:49:07.039Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "PastilleCreateDto.cs",
+              "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Dtos\\Pastille\\PastilleCreateDto.cs",
+              "RelativeDocumentMoniker": "YooVisitApi\\Dtos\\Pastille\\PastilleCreateDto.cs",
+              "ToolTip": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Dtos\\Pastille\\PastilleCreateDto.cs",
+              "RelativeToolTip": "YooVisitApi\\Dtos\\Pastille\\PastilleCreateDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-04T06:48:34.388Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
               "Title": "LatLngDto.cs",
               "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Dtos\\Shared\\LatLngDto.cs",
               "RelativeDocumentMoniker": "YooVisitApi\\Dtos\\Shared\\LatLngDto.cs",
@@ -67,12 +150,11 @@
               "RelativeToolTip": "YooVisitApi\\Dtos\\Shared\\LatLngDto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-03T12:56:54.889Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-03T12:56:54.889Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 9,
               "Title": "ZoneCreateRequestDto.cs",
               "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Dtos\\Zone\\ZoneCreateRequestDto.cs",
               "RelativeDocumentMoniker": "YooVisitApi\\Dtos\\Zone\\ZoneCreateRequestDto.cs",
@@ -80,12 +162,11 @@
               "RelativeToolTip": "YooVisitApi\\Dtos\\Zone\\ZoneCreateRequestDto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-03T12:56:45.662Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-03T12:56:45.662Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 7,
               "Title": "ZoneResponseDto.cs",
               "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Dtos\\Zone\\ZoneResponseDto.cs",
               "RelativeDocumentMoniker": "YooVisitApi\\Dtos\\Zone\\ZoneResponseDto.cs",
@@ -93,12 +174,11 @@
               "RelativeToolTip": "YooVisitApi\\Dtos\\Zone\\ZoneResponseDto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-03T12:55:58.912Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-03T12:55:58.912Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 6,
               "Title": "ZoneController.cs",
               "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Controllers\\AppliMobile\\ZoneController.cs",
               "RelativeDocumentMoniker": "YooVisitApi\\Controllers\\AppliMobile\\ZoneController.cs",
@@ -106,12 +186,11 @@
               "RelativeToolTip": "YooVisitApi\\Controllers\\AppliMobile\\ZoneController.cs",
               "ViewState": "AgIAACUAAAAAAAAAAAAAADoAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-03T12:49:52.096Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-03T12:49:52.096Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 10,
               "Title": "AuthController.cs",
               "DocumentMoniker": "C:\\DEV\\APIs\\YooVisitApi\\YooVisitApi\\Controllers\\AppliMobile\\AuthController.cs",
               "RelativeDocumentMoniker": "YooVisitApi\\Controllers\\AppliMobile\\AuthController.cs",
@@ -119,8 +198,7 @@
               "RelativeToolTip": "YooVisitApi\\Controllers\\AppliMobile\\AuthController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAABpAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-03T09:57:12.891Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-03T09:57:12.891Z"
             }
           ]
         }
