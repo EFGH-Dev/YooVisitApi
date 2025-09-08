@@ -1,6 +1,7 @@
 using Amazon.Runtime;
 using Amazon.S3;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +18,8 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApiDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString,
+        o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // --- Configuration du client S3 pour OVHcloud ---
 
@@ -42,8 +44,11 @@ builder.Services.AddSingleton<IAmazonS3>(new AmazonS3Client(credentials, s3Confi
 // 4. Inscrire ton propre service qui va utiliser le client S3
 builder.Services.AddScoped<IObjectStorageService, S3StorageService>();
 
-// --- Fin de la configuration S3 ---
+builder.Services.AddHealthChecks();
 
+
+// --- Fin de la configuration S3 ---
+builder.Services.AddSignalR();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddHttpClient();
@@ -75,6 +80,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -95,6 +113,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<ApiKeyAuthorizationFilter>();
+
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true; // Utile en développement
+});
 
 var app = builder.Build();
 
@@ -127,14 +150,25 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.MapHealthChecks("/health");
 app.UseForwardedHeaders();
 
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError("Une erreur non gérée est survenue: {Error}", context.Features.Get<IExceptionHandlerFeature>()?.Error);
+        await Results.Problem().ExecuteAsync(context);
+    });
+});
+
 app.UseWebSockets();
-app.UseMiddleware<WebSocketMiddleware>();
 
 app.UseCors("_myAllowSpecificOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<YooVisitApi.Hubs.Updates>("/hubs/updates");
 
 app.Run();

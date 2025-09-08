@@ -10,6 +10,8 @@ using YooVisitApi.Models.PastilleModel;
 using YooVisitApi.Models.PhotoModel;
 using Microsoft.Extensions.Logging;
 using YooVisitApi.Services; // AJOUTÉ : Le using pour notre nouveau service
+using Microsoft.AspNetCore.SignalR;
+using YooVisitApi.Hubs;
 
 namespace YooVisitApi.Controllers.AppliMobile
 {
@@ -19,17 +21,19 @@ namespace YooVisitApi.Controllers.AppliMobile
     public class PastillesController : ControllerBase
     {
         private readonly ApiDbContext _context;
-        private readonly IObjectStorageService _storageService; // CHANGÉ : On injecte notre service
-        private readonly IConfiguration _configuration; // AJOUTÉ : Pour lire la config (URL de base S3)
-        private readonly ILogger<PastillesController> _logger;
+        private readonly IObjectStorageService _storageService; // On injecte notre service
+        private readonly IConfiguration _configuration; // Pour lire la config (URL de base S3)
+        private readonly ILogger<PastillesController> _logger; // Pour le logging
+        private readonly IHubContext<Updates> _hubContext; // Pour SignalR
 
         // Le constructeur est mis à jour pour injecter les nouveaux services
-        public PastillesController(ApiDbContext context, IObjectStorageService storageService, IConfiguration configuration, ILogger<PastillesController> logger)
+        public PastillesController(ApiDbContext context, IObjectStorageService storageService, IConfiguration configuration, ILogger<PastillesController> logger, IHubContext<Updates> hubContext)
         {
             _context = context;
             _storageService = storageService;
             _configuration = configuration;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         [HttpPost("generate-upload-url")]
@@ -101,6 +105,9 @@ namespace YooVisitApi.Controllers.AppliMobile
                 // Sauvegarde et commit
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                _logger.LogInformation("Appel de BroadcastPastilleUpdateAsync pour la création...");
+                await BroadcastPastilleUpdateAsync(pastille.Id, "Created");
 
                 var createdPastille = await _context.Pastilles
                     .Include(p => p.User)
@@ -273,6 +280,8 @@ namespace YooVisitApi.Controllers.AppliMobile
             pastille.PeriodeConstruction = updateDto.PeriodeConstruction;
             pastille.HorairesOuverture = updateDto.HorairesOuverture;
             await _context.SaveChangesAsync();
+            // On broadcast la mise à jour à tous les clients
+            await BroadcastPastilleUpdateAsync(id, "Updated");
             return NoContent();
         }
 
@@ -299,6 +308,15 @@ namespace YooVisitApi.Controllers.AppliMobile
             _context.Pastilles.Remove(pastille);
             await _context.SaveChangesAsync();
 
+            // On broadcast la suppression à tous les clients
+            // Pour la suppression, on envoie juste l'ID, c'est suffisant.
+            var updateMessage = new { 
+                EntityType = "Pastille", 
+                Action = "Deleted", 
+                Payload = new { Id = id } 
+            };
+            await _hubContext.Clients.All.SendAsync("ReceiveUpdate", updateMessage);
+
             return NoContent();
         }
 
@@ -315,6 +333,7 @@ namespace YooVisitApi.Controllers.AppliMobile
             if (existingRating != null) return Conflict("Vous avez déjà noté cette pastille.");
             _context.PastilleRatings.Add(new PastilleRating { Id = Guid.NewGuid(), PastilleId = id, RaterUserId = raterUserId, RatingValue = request.Rating, RatedAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
+            await BroadcastPastilleUpdateAsync(id, "Updated");
             return Ok(new { Message = "Merci pour votre vote !" });
         }
 
@@ -354,6 +373,43 @@ namespace YooVisitApi.Controllers.AppliMobile
                         UploadedAt = photo.UploadedAt
                     }).ToList(),
             };
+        }
+
+        // Une méthode utilitaire pour centraliser la logique de broadcast
+        private async Task BroadcastPastilleUpdateAsync(Guid pastilleId, string action)
+        {
+            _logger.LogInformation("--- INTERIEUR de BroadcastPastilleUpdateAsync pour l'action {Action} ---", action);
+            try
+            {
+                var updatedPastille = await _context.Pastilles
+                    .AsNoTracking()
+                    .Include(p => p.User)
+                    .Include(p => p.Photos)
+                    .Include(p => p.Ratings)
+                    .FirstOrDefaultAsync(p => p.Id == pastilleId);
+
+                if (updatedPastille != null)
+                {
+                    var pastilleDto = MapToDto(updatedPastille);
+                    var updateMessage = new
+                    {
+                        EntityType = "Pastille",
+                        Action = action,
+                        Payload = pastilleDto
+                    };
+                    _logger.LogInformation(">>> Prêt à envoyer le broadcast SignalR pour {Action}", action);
+                    await _hubContext.Clients.All.SendAsync("ReceiveUpdate", updateMessage);
+                    _logger.LogInformation("<<< Broadcast SignalR pour {Action} envoyé avec succès.", action);
+                }
+                else
+                {
+                    _logger.LogWarning($"Pastille {pastilleId} non trouvée pour le broadcast {action}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erreur lors du broadcast de la pastille {pastilleId} ({action}).");
+            }
         }
     }
 }

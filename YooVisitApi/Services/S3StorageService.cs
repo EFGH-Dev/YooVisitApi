@@ -90,7 +90,7 @@ namespace YooVisitApi.Services
                 BucketName = "yoovisit-photos",
                 Key = fileKey,
                 Verb = HttpVerb.GET,
-                Expires = DateTime.UtcNow.AddHours(1) // URL valide 1 heure
+                Expires = DateTime.UtcNow.AddHours(7) // URL valide 7 heures
             };
             return _s3Client.GetPreSignedURL(request);
         }

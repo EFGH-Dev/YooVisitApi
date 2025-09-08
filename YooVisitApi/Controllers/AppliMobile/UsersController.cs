@@ -6,6 +6,8 @@ using YooVisitApi.Data;
 using YooVisitApi.Dtos.User;
 using YooVisitApi.Interfaces;
 using YooVisitApi.Models.UserModel;
+using YooVisitApi.Services;
+
 
 namespace YooVisitApi.Controllers.AppliMobile;
 
@@ -16,15 +18,17 @@ public class UsersController : ControllerBase
     private readonly ApiDbContext _context;
     private readonly ITokenService _tokenService;
     private readonly IWebHostEnvironment _hostingEnvironment;
+    private readonly IObjectStorageService _storageService;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(ApiDbContext context, ITokenService tokenService, IWebHostEnvironment hostingEnvironment)
+    public UsersController(ApiDbContext context, ITokenService tokenService, IWebHostEnvironment hostingEnvironment, IObjectStorageService storageService, ILogger<UsersController> logger)
     {
         _context = context;
         _tokenService = tokenService;
         _hostingEnvironment = hostingEnvironment;
+        _storageService = storageService;
+        _logger = logger;
     }
-
-    // ...
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto registerDto)
@@ -69,7 +73,7 @@ public class UsersController : ControllerBase
             DateInscription = user.DateInscription,
             ProfilePictureUrl = user.ProfilePictureFileName == null
                 ? null
-                : $"{Request.Scheme}://{Request.Host}/storage/avatars/{user.ProfilePictureFileName}"
+                : _storageService.GeneratePresignedGetUrl(user.ProfilePictureFileName)
         });
     }
 
@@ -92,7 +96,7 @@ public class UsersController : ControllerBase
             ExplorationProgress = pastillesCount > 50 ? 1.0 : pastillesCount / 50.0, // Logique de progression simple
             ProfilePictureUrl = user.ProfilePictureFileName == null
                 ? null
-                : $"{Request.Scheme}://{Request.Host}/storage/avatars/{user.ProfilePictureFileName}"
+                : _storageService.GeneratePresignedGetUrl(user.ProfilePictureFileName)
         };
 
         return Ok(stats);
@@ -118,8 +122,11 @@ public class UsersController : ControllerBase
     [HttpPost("me/profile-picture")]
     public async Task<IActionResult> UploadProfilePicture(IFormFile file)
     {
+        _logger.LogInformation(">>> Début de l'upload de la photo de profil.");
+
         if (file == null || file.Length == 0)
         {
+            _logger.LogWarning("Aucun fichier fourni dans la requête.");
             return BadRequest("Aucun fichier fourni.");
         }
 
@@ -128,33 +135,43 @@ public class UsersController : ControllerBase
 
         if (user == null)
         {
+            _logger.LogWarning($"Utilisateur non trouvé pour l'ID : {userId}");
             return NotFound("Utilisateur non trouvé.");
         }
 
-        // On crée un nom de fichier unique pour éviter les conflits
-        var fileExtension = Path.GetExtension(file.FileName);
-        var newFileName = $"{userId}{fileExtension}";
+        _logger.LogInformation($"Utilisateur trouvé : {user.Email}.");
 
-        // On s'assure que le dossier de stockage existe
-        // IMPORTANT : Ce chemin pointe vers un dossier DANS le conteneur.
-        // On doit monter un volume Docker sur ce dossier pour que les fichiers persistent.
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "storage", "avatars");
-        Directory.CreateDirectory(uploadsFolder);
-
-        var filePath = Path.Combine(uploadsFolder, newFileName);
-
-        // On sauvegarde le fichier sur le disque
-        await using (var stream = new FileStream(filePath, FileMode.Create))
+        // Si l'utilisateur avait déjà une photo, on supprime l'ancienne de S3
+        if (!string.IsNullOrEmpty(user.ProfilePictureFileName))
         {
-            await file.CopyToAsync(stream);
+            _logger.LogInformation($"Suppression de l'ancien avatar : {user.ProfilePictureFileName}");
+            await _storageService.DeleteFileAsync(user.ProfilePictureFileName);
         }
 
-        // On met à jour la fiche du joueur avec le nom du fichier
-        user.ProfilePictureFileName = newFileName;
-        await _context.SaveChangesAsync();
+        var fileExtension = Path.GetExtension(file.FileName);
+        var fileKey = $"avatars/{Guid.NewGuid()}{fileExtension}";
+        _logger.LogInformation($"Nouvelle clé de fichier générée : {fileKey}");
 
-        // On renvoie l'URL publique de la nouvelle image
-        var newUrl = $"{Request.Scheme}://{Request.Host}/storage/avatars/{newFileName}";
+        try
+        {
+            _logger.LogInformation("--- Tentative d'upload vers S3... ---");
+            await _storageService.UploadFileAsync(file.OpenReadStream(), fileKey, file.ContentType);
+            _logger.LogInformation("--- UPLOAD RÉUSSI ---");
+        }
+        catch (Exception ex)
+        {
+            // CETTE PARTIE EST LA PLUS IMPORTANTE !
+            // On log l'erreur complète si l'upload S3 échoue
+            _logger.LogError(ex, "!!!! ERREUR LORS DE L'UPLOAD SUR S3 !!!!");
+            return StatusCode(500, "Une erreur est survenue lors de la sauvegarde de l'image.");
+        }
+
+        _logger.LogInformation("Mise à jour de l'utilisateur en base de données...");
+        user.ProfilePictureFileName = fileKey;
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Mise à jour de la base de données réussie.");
+
+        var newUrl = _storageService.GeneratePresignedGetUrl(fileKey);
         return Ok(new { profilePictureUrl = newUrl });
     }
 
