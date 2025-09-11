@@ -182,39 +182,17 @@ namespace YooVisitApi.Controllers.AppliMobile
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<PastilleDto>>> GetAllPastilles()
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid.TryParse(userIdString, out Guid currentUserId);
 
-            var baseUrl = $"{_configuration["ObjectStorage:ServiceUrl"]}/{_configuration["ObjectStorage:BucketName"]}";
-
-            var dtos = await _context.Pastilles
+            List<Pastille> pastillesFromDb = await _context.Pastilles
                 .Include(p => p.User)
                 .Include(p => p.Photos)
                 .Include(p => p.Ratings)
                 .AsNoTracking()
-                .Select(p => new PastilleDto
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    Description = p.Description,
-                    Latitude = p.Latitude,
-                    Longitude = p.Longitude,
-                    CreatedByUserName = p.User == null ? "Inconnu" : p.User.Nom,
-                    AverageRating = p.Ratings.Any() ? p.Ratings.Average(r => r.RatingValue) : 0,
-                    PhotoUrl = p.Photos.Any(ph => !string.IsNullOrEmpty(ph.FileKey))
-                        ? _storageService.GeneratePresignedGetUrl(p.Photos.First(ph => !string.IsNullOrEmpty(ph.FileKey)).FileKey)
-                        : null,
-                    IsOwner = p.CreatedByUserId == currentUserId,
-                    Photos = p.Photos
-                        .Where(ph => !string.IsNullOrEmpty(ph.FileKey))
-                        .Select(photo => new PhotoDto
-                        {
-                            Id = photo.Id,
-                            ImageUrl = _storageService.GeneratePresignedGetUrl(photo.FileKey),
-                            UploadedAt = photo.UploadedAt
-                        }).ToList()
-                })
                 .ToListAsync();
+
+            List<PastilleDto> dtos = pastillesFromDb.Select(p => MapToDto(p, currentUserId)).ToList();
 
             return Ok(dtos);
         }
@@ -222,9 +200,9 @@ namespace YooVisitApi.Controllers.AppliMobile
         [HttpGet("my-pastilles")]
         public async Task<ActionResult<IEnumerable<PastilleDto>>> GetMyPastilles()
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            Guid userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            var pastillesFromDb = await _context.Pastilles
+            List<Pastille> pastillesFromDb = await _context.Pastilles
                 .Where(p => p.CreatedByUserId == userId)
                 .Include(p => p.User)
                 .Include(p => p.Photos)
@@ -232,20 +210,19 @@ namespace YooVisitApi.Controllers.AppliMobile
                 .AsNoTracking()
                 .ToListAsync();
 
-            var dtos = pastillesFromDb.Select(p => MapToDto(p, userId)).ToList();
+            List<PastilleDto> dtos = pastillesFromDb.Select(p => MapToDto(p, userId)).ToList();
 
             return Ok(dtos);
         }
 
         [HttpGet("{id}")]
-        [AllowAnonymous] // Ou [Authorize] si tu veux que seuls les connectés voient les détails
+        [AllowAnonymous]
         public async Task<ActionResult<PastilleDto>> GetPastilleById(Guid id)
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid.TryParse(userIdString, out Guid currentUserId);
 
-            // On récupère la pastille ET ses données liées (photos, utilisateur, notes)
-            var pastille = await _context.Pastilles
+            Pastille? pastille = await _context.Pastilles
                 .Include(p => p.User)
                 .Include(p => p.Photos)
                 .Include(p => p.Ratings)
@@ -257,8 +234,7 @@ namespace YooVisitApi.Controllers.AppliMobile
                 return NotFound("Pastille non trouvée.");
             }
 
-            // On utilise notre super fonction MapToDto qui fait tout le travail
-            var dto = MapToDto(pastille, currentUserId);
+            PastilleDto dto = MapToDto(pastille, currentUserId);
 
             return Ok(dto);
         }
@@ -267,7 +243,6 @@ namespace YooVisitApi.Controllers.AppliMobile
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePastille(Guid id, [FromBody] PastilleUpdateDto updateDto)
         {
-            // ... (Aucun changement dans cette méthode)
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var pastille = await _context.Pastilles.FindAsync(id);
             if (pastille == null) return NotFound("Pastille non trouvée.");
@@ -339,16 +314,19 @@ namespace YooVisitApi.Controllers.AppliMobile
 
         private PastilleDto MapToDto(Pastille pastille, Guid? currentUserId = null)
         {
-            // 1. On sélectionne la PREMIÈRE photo de la liste (s'il y en a une).
             var firstPhoto = pastille.Photos?.FirstOrDefault(p => !string.IsNullOrEmpty(p.FileKey));
 
-            // 2. On génère l'URL pré-signée pour cette première photo uniquement.
-            // Si firstPhoto est null (pas de photos), photoUrl sera null. C'est parfait.
             var photoUrl = firstPhoto != null
                 ? _storageService.GeneratePresignedGetUrl(firstPhoto.FileKey)
                 : null;
-            Console.WriteLine($"--- Server UTC Time: {DateTime.UtcNow:O} ---"); // "O" = format ISO 8601, très précis
-            Console.WriteLine($"--- URL Générée pour {firstPhoto.FileKey}: {photoUrl} ---");
+
+            // The Console.WriteLine calls can be removed if you no longer need them for debugging
+            Console.WriteLine($"--- Server UTC Time: {DateTime.UtcNow:O}");
+            if (firstPhoto != null)
+            {
+                Console.WriteLine($"--- URL Générée pour {firstPhoto.FileKey}: {photoUrl} ---");
+            }
+
             return new PastilleDto
             {
                 Id = pastille.Id,
@@ -360,7 +338,10 @@ namespace YooVisitApi.Controllers.AppliMobile
                 StyleArchitectural = pastille.StyleArchitectural,
                 PeriodeConstruction = pastille.PeriodeConstruction,
                 HorairesOuverture = pastille.HorairesOuverture,
+
+                // CORRECTION : Add this line to include the creator's ID
                 CreatedByUserId = pastille.CreatedByUserId,
+
                 CreatedByUserName = pastille.User?.Nom ?? pastille.User?.Email.Split('@').First() ?? "Inconnu",
                 AverageRating = pastille.Ratings.Any() ? pastille.Ratings.Average(r => r.RatingValue) : 0,
                 PhotoUrl = photoUrl,
