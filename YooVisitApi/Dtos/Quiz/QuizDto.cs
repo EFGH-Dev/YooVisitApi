@@ -6,6 +6,7 @@
         public string Title { get; set; }
         public string? Description { get; set; }
         public string QuestionText { get; set; }
+        public string QuizType { get; set; }
         public Guid PastilleId { get; set; }
         public List<QuizAnswerDto> Answers { get; set; } = new();
     }

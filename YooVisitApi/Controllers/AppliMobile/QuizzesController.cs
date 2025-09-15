@@ -5,6 +5,7 @@ using System.Security.Claims;
 using YooVisitApi.Data;
 using YooVisitApi.Dtos.Quiz;
 using YooVisitApi.Models;
+using YooVisitApi.Models.PastilleModel;
 using YooVisitApi.Models.QuizModel;
 using YooVisitApi.Models.UserModel;
 
@@ -26,36 +27,68 @@ namespace YooVisitApi.Controllers.AppliMobile
         [HttpPost]
         public async Task<IActionResult> CreateQuiz(Guid pastilleId, [FromBody] QuizCreateDto dto)
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var pastille = await _context.Pastilles.FindAsync(pastilleId);
+            Guid userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            Pastille? pastille = await _context.Pastilles.FindAsync(pastilleId);
             if (pastille == null) return NotFound("Pastille non trouvée.");
             if (pastille.CreatedByUserId != userId) return Forbid("Seul le créateur de la pastille peut y ajouter un quiz.");
 
-            var quiz = new Quiz
+            // Conversion sécurisée du type de quiz
+            if (!Enum.TryParse<QuizType>(dto.QuizType, true, out QuizType quizType))
+            {
+                return BadRequest("La valeur de 'quizType' est invalide.");
+            }
+
+            Quiz quiz = new Quiz
             {
                 Id = Guid.NewGuid(),
                 PastilleId = pastilleId,
                 Title = dto.Title,
                 Description = dto.Description,
                 QuestionText = dto.QuestionText,
+                Type = quizType // On assigne l'enum
             };
 
-            for (int i = 0; i < dto.Answers.Count; i++)
+            // Logique de création des réponses en fonction du type de quiz
+            switch (quizType)
             {
-                quiz.Answers.Add(new QuizAnswer
-                {
-                    Id = Guid.NewGuid(),
-                    AnswerText = dto.Answers[i],
-                    IsCorrect = i == dto.CorrectAnswerIndex
-                });
+                case QuizType.QCM:
+                    // Pour un QCM, on s'attend à plusieurs réponses
+                    if (dto.Answers.Count < 2) return BadRequest("Un QCM doit avoir au moins 2 réponses.");
+                    for (int i = 0; i < dto.Answers.Count; i++)
+                    {
+                        quiz.Answers.Add(new QuizAnswer
+                        {
+                            Id = Guid.NewGuid(),
+                            AnswerText = dto.Answers[i],
+                            IsCorrect = i == dto.CorrectAnswerIndex
+                        });
+                    }
+                    break;
+
+                case QuizType.VraiFaux:
+                    // Pour un Vrai/Faux, les réponses sont fixes
+                    quiz.Answers.Add(new QuizAnswer { Id = Guid.NewGuid(), AnswerText = "Vrai", IsCorrect = (dto.CorrectAnswerIndex == 0) });
+                    quiz.Answers.Add(new QuizAnswer { Id = Guid.NewGuid(), AnswerText = "Faux", IsCorrect = (dto.CorrectAnswerIndex == 1) });
+                    break;
+
+                case QuizType.TexteLibre:
+                    // Pour un texte libre, il n'y a qu'une seule réponse, et c'est la bonne
+                    if (dto.Answers.Count != 1) return BadRequest("Un quiz de type Texte Libre ne doit avoir qu'une seule réponse.");
+                    quiz.Answers.Add(new QuizAnswer
+                    {
+                        Id = Guid.NewGuid(),
+                        AnswerText = dto.Answers[0],
+                        IsCorrect = true // L'unique réponse est la bonne
+                    });
+                    break;
             }
 
             _context.Quizzes.Add(quiz);
             await _context.SaveChangesAsync();
 
-            // On renvoie un DTO propre
-            var quizDto = MapToDto(quiz);
-            return CreatedAtAction(nameof(GetQuizzes), new { pastilleId = pastille.Id, quizId = quiz.Id }, quizDto);
+            // On renvoie un DTO propre et à jour
+            QuizDto quizDto = MapToDto(quiz);
+            return CreatedAtAction(nameof(GetQuizForPastille), new { pastilleId = pastille.Id, quizId = quiz.Id }, quizDto);
         }
 
         // --- RÉCUPÉRER tous les quiz d'une pastille ---
@@ -156,6 +189,7 @@ namespace YooVisitApi.Controllers.AppliMobile
                 Title = quiz.Title,
                 Description = quiz.Description,
                 QuestionText = quiz.QuestionText,
+                QuizType = quiz.Type.ToString(), // <-- On ajoute le type de quiz ici !
                 Answers = quiz.Answers?.Select(a => new QuizAnswerDto
                 {
                     Id = a.Id,
