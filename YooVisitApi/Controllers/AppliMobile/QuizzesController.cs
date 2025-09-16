@@ -163,24 +163,50 @@ namespace YooVisitApi.Controllers.AppliMobile
         [HttpPost("{quizId}/attempt")]
         public async Task<ActionResult<QuizAttemptResultDto>> AttemptQuiz(Guid pastilleId, Guid quizId, [FromBody] QuizAttemptDto dto)
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            Guid userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            var quiz = await _context.Quizzes
+            Quiz? quiz = await _context.Quizzes
                 .Include(q => q.Answers)
                 .FirstOrDefaultAsync(q => q.Id == quizId && q.PastilleId == pastilleId);
 
             if (quiz == null) return NotFound("Quiz non trouvé.");
 
-            var selectedAnswer = quiz.Answers.FirstOrDefault(a => a.Id == dto.SelectedAnswerId);
-            if (selectedAnswer == null) return BadRequest("Réponse invalide.");
-
-            var existingAttempt = await _context.UserQuizAttempts
+            UserQuizAttempt? existingAttempt = await _context.UserQuizAttempts
                 .FirstOrDefaultAsync(a => a.UserId == userId && a.QuizId == quizId);
             if (existingAttempt != null) return Conflict("Vous avez déjà répondu à ce quiz.");
 
-            bool wasCorrect = selectedAnswer.IsCorrect;
-            int xpGained = 0;
+            bool wasCorrect = false;
+            Guid? selectedAnswerIdForRecord = null; // Pour enregistrer l'ID dans l'historique
+            QuizAnswer correctAnswer = quiz.Answers.First(a => a.IsCorrect);
 
+            // --- LOGIQUE ADAPTATIVE SELON LE TYPE DE QUIZ ---
+            switch (quiz.Type)
+            {
+                case QuizType.QCM:
+                case QuizType.VraiFaux:
+                    if (!dto.SelectedAnswerId.HasValue)
+                        return BadRequest("SelectedAnswerId est requis pour ce type de quiz.");
+
+                    QuizAnswer? selectedAnswer = quiz.Answers.FirstOrDefault(a => a.Id == dto.SelectedAnswerId.Value);
+                    if (selectedAnswer == null)
+                        return BadRequest("Réponse invalide.");
+
+                    wasCorrect = selectedAnswer.IsCorrect;
+                    selectedAnswerIdForRecord = selectedAnswer.Id;
+                    break;
+
+                case QuizType.TexteLibre:
+                    if (string.IsNullOrWhiteSpace(dto.AnswerText))
+                        return BadRequest("AnswerText est requis pour ce type de quiz.");
+
+                    // Comparaison insensible à la casse et aux espaces
+                    wasCorrect = string.Equals(correctAnswer.AnswerText.Trim(), dto.AnswerText.Trim(), StringComparison.OrdinalIgnoreCase);
+                    selectedAnswerIdForRecord = correctAnswer.Id; // On enregistre l'ID de la bonne réponse
+                    break;
+            }
+            // --- FIN DE LA LOGIQUE ADAPTATIVE ---
+
+            int xpGained = 0;
             if (wasCorrect)
             {
                 var user = await _context.Users.FindAsync(userId);
@@ -196,7 +222,7 @@ namespace YooVisitApi.Controllers.AppliMobile
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 QuizId = quizId,
-                SelectedAnswerId = dto.SelectedAnswerId,
+                SelectedAnswerId = selectedAnswerIdForRecord.Value, // On enregistre l'ID pertinent
                 AttemptedAt = DateTime.UtcNow,
                 WasCorrect = wasCorrect
             });
@@ -207,7 +233,7 @@ namespace YooVisitApi.Controllers.AppliMobile
             {
                 WasCorrect = wasCorrect,
                 ExperienceGained = xpGained,
-                CorrectAnswerId = quiz.Answers.First(a => a.IsCorrect).Id
+                CorrectAnswerId = correctAnswer.Id
             });
         }
 
