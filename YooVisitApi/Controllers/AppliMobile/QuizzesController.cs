@@ -45,6 +45,7 @@ namespace YooVisitApi.Controllers.AppliMobile
                 Title = dto.Title,
                 Description = dto.Description,
                 QuestionText = dto.QuestionText,
+                Explanation = dto.Explanation,
                 Type = quizType // On assigne l'enum
             };
 
@@ -111,6 +112,37 @@ namespace YooVisitApi.Controllers.AppliMobile
                 .ToList(); // Pas besoin de version async ici, c'est une opération en mémoire.
 
             return Ok(quizzesDto);
+        }
+
+        [HttpDelete("{quizId}")]
+        public async Task<IActionResult> DeleteQuiz(Guid pastilleId, Guid quizId)
+        {
+            // 1. Récupérer l'ID de l'utilisateur authentifié
+            Guid userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // 2. Trouver le quiz en s'assurant d'inclure la pastille parente pour la vérification
+            Quiz? quiz = await _context.Quizzes
+                .Include(q => q.Pastille) // Important pour vérifier le propriétaire !
+                .FirstOrDefaultAsync(q => q.Id == quizId && q.PastilleId == pastilleId);
+
+            // 3. Vérifier si le quiz existe
+            if (quiz == null)
+            {
+                return NotFound("Quiz non trouvé.");
+            }
+
+            // 4. Sécurité : vérifier que l'utilisateur est bien le propriétaire de la pastille
+            if (quiz.Pastille.CreatedByUserId != userId)
+            {
+                return Forbid("Action non autorisée. Vous n'êtes pas le propriétaire de ce quiz.");
+            }
+
+            // 5. Supprimer le quiz et sauvegarder les changements
+            _context.Quizzes.Remove(quiz);
+            await _context.SaveChangesAsync();
+
+            // 6. Renvoyer une réponse de succès sans contenu
+            return NoContent(); // C'est la réponse standard pour une suppression réussie (HTTP 204)
         }
 
         // --- RÉCUPÉRER un quiz spécifique ---
@@ -189,6 +221,7 @@ namespace YooVisitApi.Controllers.AppliMobile
                 Title = quiz.Title,
                 Description = quiz.Description,
                 QuestionText = quiz.QuestionText,
+                Explanation = quiz.Explanation,
                 QuizType = quiz.Type.ToString(), // <-- On ajoute le type de quiz ici !
                 Answers = quiz.Answers?.Select(a => new QuizAnswerDto
                 {

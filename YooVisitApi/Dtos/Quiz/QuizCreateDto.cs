@@ -9,7 +9,7 @@ namespace YooVisitApi.Dtos.Quiz
         public string? Description { get; set; }
         [Required]
         public string QuestionText { get; set; } = string.Empty;
-
+        public string? Explanation { get; set; }
         // --- MODIFIÉ ---
         [Required]
         public string QuizType { get; set; } = string.Empty; // Le type envoyé par Flutter

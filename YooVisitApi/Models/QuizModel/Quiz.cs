@@ -12,6 +12,7 @@ namespace YooVisitApi.Models.QuizModel
         public string? Description { get; set; }
         [Required]
         public string QuestionText { get; set; }
+        public string? Explanation { get; set; }
         public QuizType Type { get; set; }
 
         [Required]
