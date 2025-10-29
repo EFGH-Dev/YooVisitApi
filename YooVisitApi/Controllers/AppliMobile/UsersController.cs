@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
             IdUtilisateur = Guid.NewGuid(),
             Email = registerDto.Email,
             Nom = registerDto.Nom,
-            HashedPassword = BCrypt.Net.BCrypt.HashPassword(registerDto.Password), // Correction ici
+            HashedPassword = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
             DateInscription = DateTime.UtcNow
         };
 
@@ -149,7 +149,7 @@ public class UsersController : ControllerBase
         }
 
         var fileExtension = Path.GetExtension(file.FileName);
-        var fileKey = $"avatars/{Guid.NewGuid()}{fileExtension}";
+        var fileKey = $"avatars/{userId}{fileExtension}";
         _logger.LogInformation($"Nouvelle clé de fichier générée : {fileKey}");
 
         try

@@ -35,7 +35,7 @@ namespace YooVisitApi.Services
 
         public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
         {
-            var fileKey = $"{Guid.NewGuid()}-{fileName}";
+            var fileKey = fileName;
 
             var request = new PutObjectRequest
             {

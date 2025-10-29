@@ -92,6 +92,96 @@ namespace YooVisitApi.Controllers.AppliMobile
             return CreatedAtAction(nameof(GetQuizForPastille), new { pastilleId = pastille.Id, quizId = quiz.Id }, quizDto);
         }
 
+        // --- MISE À JOUR ---
+        [HttpPut("{quizId}")]
+        public async Task<IActionResult> UpdateQuiz(Guid pastilleId, Guid quizId, [FromBody] QuizUpdateDto dto)
+        {
+            Guid userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // Find the parent pastille to check ownership
+            Pastille? pastille = await _context.Pastilles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == pastilleId);
+
+            if (pastille == null) return NotFound("Pastille non trouvée.");
+            if (pastille.CreatedByUserId != userId) return Forbid("Action non autorisée.");
+
+            // Find the existing quiz, but don't track it
+            Quiz? existingQuiz = await _context.Quizzes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Id == quizId);
+
+            if (existingQuiz == null) return NotFound("Quiz non trouvé.");
+
+            if (!Enum.TryParse<QuizType>(dto.QuizType, true, out QuizType quizType))
+            {
+                return BadRequest("Type de quiz invalide.");
+            }
+
+            // 1. Remove the old answers FIRST and save this change
+            List<QuizAnswer> oldAnswers = await _context.QuizAnswers
+                .Where(a => a.QuizId == quizId)
+                .ToListAsync();
+
+            if (oldAnswers.Any())
+            {
+                _context.QuizAnswers.RemoveRange(oldAnswers);
+                await _context.SaveChangesAsync();
+            }
+
+            // 2. Now, create a new list of answers
+            List<QuizAnswer> newAnswers = new();
+            switch (quizType)
+            {
+                case QuizType.QCM:
+                    if (dto.Answers.Count < 2) return BadRequest("Un QCM doit avoir au moins 2 réponses.");
+                    for (int i = 0; i < dto.Answers.Count; i++)
+                    {
+                        newAnswers.Add(new QuizAnswer
+                        {
+                            Id = Guid.NewGuid(),
+                            AnswerText = dto.Answers[i],
+                            IsCorrect = i == dto.CorrectAnswerIndex,
+                            QuizId = quizId
+                        });
+                    }
+                    break;
+                case QuizType.VraiFaux:
+                    newAnswers.Add(new QuizAnswer { Id = Guid.NewGuid(), AnswerText = "Vrai", IsCorrect = (dto.CorrectAnswerIndex == 0), QuizId = quizId });
+                    newAnswers.Add(new QuizAnswer { Id = Guid.NewGuid(), AnswerText = "Faux", IsCorrect = (dto.CorrectAnswerIndex == 1), QuizId = quizId });
+                    break;
+                case QuizType.TexteLibre:
+                    if (dto.Answers.Count != 1) return BadRequest("Un quiz de type Texte Libre ne doit avoir qu'une seule réponse.");
+                    newAnswers.Add(new QuizAnswer
+                    {
+                        Id = Guid.NewGuid(),
+                        AnswerText = dto.Answers[0],
+                        IsCorrect = true,
+                        QuizId = quizId
+                    });
+                    break;
+            }
+
+            // 3. Attach and update the main quiz entity
+            Quiz quizToUpdate = new Quiz { Id = quizId };
+            _context.Quizzes.Attach(quizToUpdate);
+
+            quizToUpdate.Title = dto.Title;
+            quizToUpdate.Description = dto.Description;
+            quizToUpdate.QuestionText = dto.QuestionText;
+            quizToUpdate.Explanation = dto.Explanation;
+            quizToUpdate.Type = quizType;
+            quizToUpdate.PastilleId = pastilleId; // Make sure all required fields are set
+
+            // Add the new answers to the context
+            await _context.QuizAnswers.AddRangeAsync(newAnswers);
+
+            // 4. Save the final changes
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         // --- RÉCUPÉRER tous les quiz d'une pastille ---
         [HttpGet]
         public async Task<ActionResult<List<QuizDto>>> GetQuizzes(Guid pastilleId)
