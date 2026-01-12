@@ -19,8 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # --- ÉTAPE 1 : Login pour le BUILD (GitHub -> GitHub) ---
-      # On utilise le Token automatique ici, c'est plus propre.
+      # --- ÉTAPE 1 : Login pour le BUILD ---
       - name: Log in to the Container registry
         uses: docker/login-action@v2
         with:
@@ -45,27 +44,25 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      # --- ÉTAPE 2 : Déploiement sur le VPS (GitHub -> VPS) ---
+      # --- ÉTAPE 2 : Déploiement sur le VPS ---
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         env:
-          # On charge les secrets dans des variables d'environnement
           GH_TOKEN: ${{ secrets.CR_PAT }}
           GH_USER: ${{ github.actor }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # ⚠️ C'est ici la magie : on envoie ces variables sur le VPS
           envs: GH_TOKEN,GH_USER
           script: |
-            # Vérification (Debug)
+            # Vérification de sécurité
             if [ -z "$GH_TOKEN" ]; then
-              echo "❌ ERREUR : Le secret CR_PAT n'est pas arrivé sur le VPS !"
+              echo "❌ ERREUR : La variable CR_PAT est vide !"
               exit 1
             fi
 
-            # On utilise $GH_TOKEN (la variable) et pas ${{ secrets... }}
+            # Login Docker sur le VPS via la variable d'environnement
             echo $GH_TOKEN | docker login ghcr.io -u $GH_USER --password-stdin
             
             cd /home/ubuntu
