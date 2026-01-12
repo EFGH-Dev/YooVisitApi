@@ -57,7 +57,7 @@ jobs:
             # On se logue au registre sur le VPS pour avoir le droit de pull
             echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            cd /home/tonuser/app/yoovisit # ADAPTE CE CHEMIN vers ton dossier docker-compose
+            cd /home/ubuntu # ADAPTE CE CHEMIN vers ton dossier docker-compose
             
             # Pull de la nouvelle image
             docker-compose -f docker-compose.dev.yml pull
