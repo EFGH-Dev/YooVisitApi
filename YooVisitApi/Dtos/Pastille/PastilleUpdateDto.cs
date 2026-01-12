@@ -9,8 +9,6 @@ namespace YooVisitApi.Dtos.Pastille
         public string? Description { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public string? StyleArchitectural { get; set; }
-        public string? PeriodeConstruction { get; set; }
-        public string? HorairesOuverture { get; set; }
+        public string? ExternalLink { get; set; }
     }
 }

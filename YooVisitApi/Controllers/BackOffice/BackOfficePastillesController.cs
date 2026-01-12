@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using YooVisitApi.Data;
 using YooVisitApi.Models.PastilleModel;
 using YooVisitApi.Dtos.BackOffice;
+using YooVisitApi.Filters;
 
 [ApiController]
 [Route("api/backoffice/pastilles")]
@@ -51,9 +52,7 @@ public class BackOfficePastillesController : ControllerBase
                 Description = p.Description,
                 Latitude = p.Latitude,
                 Longitude = p.Longitude,
-                StyleArchitectural = p.StyleArchitectural,
-                PeriodeConstruction = p.PeriodeConstruction,
-                HorairesOuverture = p.HorairesOuverture,
+                ExternalLink = p.ExternalLink,
                 Photos = p.Photos.Select(ph => new PhotoDto
                 {
                     Id = ph.Id,
@@ -98,10 +97,7 @@ public class BackOfficePastillesController : ControllerBase
         pastilleInDb.Description = pastilleDto.Description;
         pastilleInDb.Latitude = pastilleDto.Latitude;
         pastilleInDb.Longitude = pastilleDto.Longitude;
-        pastilleInDb.StyleArchitectural = pastilleDto.StyleArchitectural;
-        pastilleInDb.PeriodeConstruction = pastilleDto.PeriodeConstruction;
-        pastilleInDb.HorairesOuverture = pastilleDto.HorairesOuverture;
-
+        pastilleInDb.ExternalLink = pastilleDto.ExternalLink;
         try
         {
             await _context.SaveChangesAsync();

@@ -76,9 +76,7 @@ namespace YooVisitApi.Controllers.AppliMobile
                     Latitude = request.Latitude,
                     Longitude = request.Longitude,
                     Altitude = request.Altitude,
-                    StyleArchitectural = request.StyleArchitectural,
-                    PeriodeConstruction = request.PeriodeConstruction,
-                    HorairesOuverture = request.HorairesOuverture,
+                    ExternalLink = request.ExternalLink,
                     CreatedByUserId = userId,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -251,9 +249,7 @@ namespace YooVisitApi.Controllers.AppliMobile
             pastille.Description = updateDto.Description;
             pastille.Latitude = updateDto.Latitude;
             pastille.Longitude = updateDto.Longitude;
-            pastille.StyleArchitectural = updateDto.StyleArchitectural;
-            pastille.PeriodeConstruction = updateDto.PeriodeConstruction;
-            pastille.HorairesOuverture = updateDto.HorairesOuverture;
+            pastille.ExternalLink = updateDto.ExternalLink;
             await _context.SaveChangesAsync();
             // On broadcast la mise à jour à tous les clients
             await BroadcastPastilleUpdateAsync(id, "Updated");
@@ -335,13 +331,8 @@ namespace YooVisitApi.Controllers.AppliMobile
                 Latitude = pastille.Latitude,
                 Longitude = pastille.Longitude,
                 Altitude = pastille.Altitude,
-                StyleArchitectural = pastille.StyleArchitectural,
-                PeriodeConstruction = pastille.PeriodeConstruction,
-                HorairesOuverture = pastille.HorairesOuverture,
-
-                // CORRECTION : Add this line to include the creator's ID
+                ExternalLink = pastille.ExternalLink,
                 CreatedByUserId = pastille.CreatedByUserId,
-
                 CreatedByUserName = pastille.User?.Nom ?? pastille.User?.Email.Split('@').First() ?? "Inconnu",
                 AverageRating = pastille.Ratings.Any() ? pastille.Ratings.Average(r => r.RatingValue) : 0,
                 PhotoUrl = photoUrl,
