@@ -2,7 +2,7 @@ name: Deploy Dev Environment
 
 on:
   push:
-    branches: [ "dev" ] # Trigger uniquement sur la branche 'dev'
+    branches: [ "dev" ]
 
 env:
   REGISTRY: ghcr.io
@@ -13,21 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # Indispensable pour pousser l'image sur GHCR
+      packages: write # Indispensable pour que GITHUB_TOKEN puisse écrire
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 1. Login à Docker Hub (ici GHCR)
+      # --- ÉTAPE 1 : Login pour le BUILD (GitHub -> GitHub) ---
+      # On utilise le Token automatique ici, c'est plus propre.
       - name: Log in to the Container registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.CR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2. Extract metadata (tags, labels) for Docker
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
@@ -36,31 +36,39 @@ jobs:
           tags: |
             type=raw,value=dev
 
-      # 3. Build and Push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: Dockerfile # Vérifie bien ce chemin !
+          file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      # 4. Déploiement sur le VPS via SSH
+      # --- ÉTAPE 2 : Déploiement sur le VPS (GitHub -> VPS) ---
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
+        env:
+          # On charge les secrets dans des variables d'environnement
+          GH_TOKEN: ${{ secrets.CR_PAT }}
+          GH_USER: ${{ github.actor }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # ⚠️ C'est ici la magie : on envoie ces variables sur le VPS
+          envs: GH_TOKEN,GH_USER
           script: |
-            # On se logue au registre sur le VPS pour avoir le droit de pull
-            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Vérification (Debug)
+            if [ -z "$GH_TOKEN" ]; then
+              echo "❌ ERREUR : Le secret CR_PAT n'est pas arrivé sur le VPS !"
+              exit 1
+            fi
+
+            # On utilise $GH_TOKEN (la variable) et pas ${{ secrets... }}
+            echo $GH_TOKEN | docker login ghcr.io -u $GH_USER --password-stdin
             
-            cd /home/ubuntu # ADAPTE CE CHEMIN vers ton dossier docker-compose
+            cd /home/ubuntu
             
-            # Pull de la nouvelle image
             docker-compose -f docker-compose.dev.yml pull
-            
-            # Redémarrage propre
             docker-compose -f docker-compose.dev.yml up -d
