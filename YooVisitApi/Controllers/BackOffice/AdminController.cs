@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using YooVisitApi.Data;
 using YooVisitApi.Dtos.User;
+using YooVisitApi.Filters;
 
 [ApiController]
 [Route("api/[controller]")]

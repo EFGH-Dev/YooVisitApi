@@ -1,56 +1,48 @@
-﻿using Amazon.Runtime;
+﻿// --- N'oublie pas ces nouveaux usings ! ---
 using Amazon.S3;
 using Amazon.S3.Model;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options; // <-- Pour IOptions<T>
 using System.Net;
-using YooVisitApi.Dtos.Storage;
+using YooVisitApi.Configuration; // <-- Ta classe POCO
 using YooVisitApi.Interfaces;
+// (Tu n'as plus besoin de Amazon.Runtime ou Microsoft.AspNetCore.Mvc)
 
 namespace YooVisitApi.Services
 {
     public class S3StorageService : IObjectStorageService
     {
-        private readonly IConfiguration _configuration;
-        private readonly AmazonS3Client _s3Client;
-        private readonly string _bucketName = string.Empty;
-        private readonly string _serviceUrl = string.Empty;
+        // 1. DÉPENDANCES PROPRES (injectées)
+        private readonly IAmazonS3 _s3Client;
+        private readonly ObjectStorageSettings _settings;
 
-        public S3StorageService(IConfiguration configuration)
+        // 2. LE NOUVEAU CONSTRUCTEUR (propre)
+        // Il reçoit les objets au lieu de les fabriquer.
+        public S3StorageService(IAmazonS3 s3Client, IOptions<ObjectStorageSettings> storageOptions)
         {
-            _configuration = configuration;
-            var accessKey = _configuration["ObjectStorage:AccessKey"];
-            var secretKey = _configuration["ObjectStorage:SecretKey"];
-            _serviceUrl = _configuration["ObjectStorage:ServiceUrl"] ?? throw new ArgumentNullException("ServiceUrl");
-            _bucketName = _configuration["ObjectStorage:BucketName"] ?? throw new ArgumentNullException("BucketName");
-
-            var credentials = new BasicAWSCredentials(accessKey, secretKey);
-            var config = new AmazonS3Config
-            {
-                ServiceURL = _serviceUrl,
-                AuthenticationRegion = "GRA",
-                ForcePathStyle = true,
-            };
-            _s3Client = new AmazonS3Client(credentials, config);
+            this._s3Client = s3Client; // Reçu de la DI
+            this._settings = storageOptions.Value; // Reçu de la DI
         }
 
         public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
         {
-            var fileKey = fileName;
-
-            var request = new PutObjectRequest
+            PutObjectRequest request = new PutObjectRequest
             {
-                BucketName = _bucketName,
-                Key = fileKey,
+                // 3. UTILISATION FORTEMENT TYPÉE
+                BucketName = this._settings.BucketName,
+                Key = fileName,
                 InputStream = fileStream,
                 ContentType = contentType,
-                CannedACL = S3CannedACL.PublicRead
+
+                // 4. FIX DE SÉCURITÉ
+                // Les fichiers sont privés. L'accès se fait par URL pré-signée.
+                CannedACL = S3CannedACL.Private
             };
 
-            var response = await _s3Client.PutObjectAsync(request);
+            PutObjectResponse response = await _s3Client.PutObjectAsync(request);
 
             if (response.HttpStatusCode == HttpStatusCode.OK)
             {
-                return fileKey; // On retourne seulement la clé unique du fichier
+                return fileName;
             }
 
             throw new Exception($"Erreur lors de l'upload du fichier vers S3. Status: {response.HttpStatusCode}");
@@ -58,9 +50,9 @@ namespace YooVisitApi.Services
 
         public async Task DeleteFileAsync(string fileKey)
         {
-            var request = new DeleteObjectRequest
+            DeleteObjectRequest request = new DeleteObjectRequest
             {
-                BucketName = _bucketName,
+                BucketName = this._settings.BucketName, // Fortement typé
                 Key = fileKey
             };
             await _s3Client.DeleteObjectAsync(request);
@@ -68,39 +60,42 @@ namespace YooVisitApi.Services
 
         public string GeneratePresignedUploadUrl(string fileName, string contentType)
         {
-            var fileKey = $"{Guid.NewGuid()}-{fileName}";
-
-            var request = new GetPreSignedUrlRequest
+            GetPreSignedUrlRequest request = new GetPreSignedUrlRequest
             {
-                BucketName = _bucketName,
+                BucketName = this._settings.BucketName, // Fortement typé
                 Key = fileName,
                 Verb = HttpVerb.PUT,
                 ContentType = contentType,
-                Expires = DateTime.UtcNow.AddMinutes(5) // L'URL est valide pour 5 minutes
+                Expires = DateTime.UtcNow.AddMinutes(5)
             };
 
-            string presignedUrl = _s3Client.GetPreSignedURL(request);
-            return presignedUrl;
+            return this._s3Client.GetPreSignedURL(request);
         }
 
         public string GeneratePresignedGetUrl(string fileKey)
         {
-            var request = new GetPreSignedUrlRequest
+            if (string.IsNullOrEmpty(fileKey))
             {
-                BucketName = "yoovisit-photos",
+                return string.Empty; // Gère le cas d'une image non définie
+            }
+
+            GetPreSignedUrlRequest request = new GetPreSignedUrlRequest
+            {
+                // 5. FIX DE BUG (plus de hardcoding)
+                BucketName = this._settings.BucketName, // Fortement typé
                 Key = fileKey,
                 Verb = HttpVerb.GET,
-                Expires = DateTime.UtcNow.AddHours(7) // URL valide 7 heures
+                Expires = DateTime.UtcNow.AddHours(7)
             };
-            return _s3Client.GetPreSignedURL(request);
+            return this._s3Client.GetPreSignedURL(request);
         }
 
         public async Task RenameFileAsync(string oldKey, string newKey)
         {
-            var bucketName = "yoovisit-photos"; // Ou depuis ta config
+            // 5. FIX DE BUG (plus de hardcoding)
+            string bucketName = this._settings.BucketName; // Fortement typé
 
-            // Étape A : Copier l'objet avec le nouveau nom
-            var copyRequest = new CopyObjectRequest
+            CopyObjectRequest copyRequest = new CopyObjectRequest
             {
                 SourceBucket = bucketName,
                 SourceKey = oldKey,
@@ -109,8 +104,7 @@ namespace YooVisitApi.Services
             };
             await _s3Client.CopyObjectAsync(copyRequest);
 
-            // Étape B : Supprimer l'objet original
-            var deleteRequest = new DeleteObjectRequest
+            DeleteObjectRequest deleteRequest = new DeleteObjectRequest
             {
                 BucketName = bucketName,
                 Key = oldKey

@@ -12,9 +12,7 @@ namespace YooVisitApi.Dtos.Pastille
         [Required]
         public double Longitude { get; set; }
         public double? Altitude { get; set; }
-        public string? StyleArchitectural { get; set; }
-        public string? PeriodeConstruction { get; set; }
-        public string? HorairesOuverture { get; set; }
+        public string? ExternalLink { get; set; }
         public DateTime CreatedAt { get; set; }
 
         [Required]

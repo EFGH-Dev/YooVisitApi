@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using YooVisitApi.Data;
 using YooVisitApi.Models.ZoneModel;
 using YooVisitApi.Dtos.BackOffice;
+using YooVisitApi.Filters;
 
 [ApiController]
 [Route("api/backoffice/zones")]

@@ -8,8 +8,6 @@
         public double Longitude { get; set; }
         public double? Altitude { get; set; }
         public string Description { get; set; }
-        public string StyleArchitectural { get; set; }
-        public string PeriodeConstruction { get; set; }
-        public string HorairesOuverture { get; set; }
+        public string ExternalLink { get; set; }
     }
 }

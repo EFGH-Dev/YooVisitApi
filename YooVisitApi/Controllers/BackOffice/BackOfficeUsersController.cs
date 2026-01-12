@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using YooVisitApi.Data;
 using YooVisitApi.Models.UserModel;
 using YooVisitApi.Dtos.BackOffice;
+using YooVisitApi.Filters;
 
 [ApiController]
 [Route("api/backoffice/users")]

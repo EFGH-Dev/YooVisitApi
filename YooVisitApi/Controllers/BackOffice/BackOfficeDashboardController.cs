@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using YooVisitApi.Data;
 using YooVisitApi.Dtos.BackOffice;
+using YooVisitApi.Filters;
 
 [ApiController]
 [Route("api/backoffice")]
