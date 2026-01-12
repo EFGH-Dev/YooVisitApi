@@ -25,7 +25,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.HOSTING_SECRET }}
+          password: ${{ secrets.CR_PAT }}
 
       # 2. Extract metadata (tags, labels) for Docker
       - name: Extract metadata (tags, labels) for Docker
