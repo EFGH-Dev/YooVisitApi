@@ -8,8 +8,7 @@ using YooVisitApi.Dtos.Photo;
 using YooVisitApi.Dtos.Storage;
 using YooVisitApi.Models.PastilleModel;
 using YooVisitApi.Models.PhotoModel;
-using Microsoft.Extensions.Logging;
-using YooVisitApi.Services; // AJOUTÉ : Le using pour notre nouveau service
+using YooVisitApi.Services;
 using Microsoft.AspNetCore.SignalR;
 using YooVisitApi.Hubs;
 

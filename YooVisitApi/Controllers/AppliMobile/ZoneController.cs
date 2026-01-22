@@ -59,7 +59,7 @@ public class ZonesController : ControllerBase
 
         // 2. Émission du message
         await _hubContext.Clients.All.SendAsync(
-            "UpdateReceived", // Nom de la méthode écoutée par le client
+            "ReceiveUpdate", // Nom de la méthode écoutée par le client
             new UpdateReceivedDto
             {
                 EntityType = "Zone",
@@ -180,7 +180,7 @@ public class ZonesController : ControllerBase
 
         // 2. Émission du message
         await _hubContext.Clients.All.SendAsync(
-            "UpdateReceived",
+            "ReceiveUpdate",
             new UpdateReceivedDto
             {
                 EntityType = "Zone",
@@ -224,7 +224,7 @@ public class ZonesController : ControllerBase
         // --- 🚀 SIGNALR : Suppression ---
         // 1. On envoie juste l'ID pour la suppression côté client
         await _hubContext.Clients.All.SendAsync(
-            "UpdateReceived",
+            "ReceiveUpdate",
             new UpdateReceivedDto
             {
                 EntityType = "Zone",
