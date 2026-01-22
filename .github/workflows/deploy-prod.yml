@@ -63,9 +63,9 @@ jobs:
             
             cd /home/ubuntu
             
-            cat <<EOF > docker-compose.prod.yml
-            $(cat docker-compose.prod.yml) 
+            cat <<EOF > docker-compose.yml
+            $(cat docker-compose.yml) 
             EOF
             
-            docker-compose -f docker-compose.prod.yml pull
-            docker-compose -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.yml pull
+            docker-compose -f docker-compose.yml up -d
